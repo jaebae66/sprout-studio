@@ -60,8 +60,18 @@ function buildGraph(notes: readonly Note[]) {
   return { nodes: [...nodes.values()], edges };
 }
 
-/** One step of a simple force layout: nodes push apart, links pull together, everything drifts to the middle. */
-function tick(nodes: GraphNode[], edges: Edge[], held: GraphNode | null): number {
+/** How hot a fresh layout starts, how fast it cools each step, and when it counts as still. */
+const ALPHA_START = 1;
+const ALPHA_DECAY = 0.97;
+const ALPHA_STILL = 0.004;
+/** Steps worked out before the first frame, so the graph appears already settled. */
+const SETTLE_STEPS = 300;
+
+/**
+ * One step of a simple force layout: nodes push apart, links pull together, everything
+ * drifts to the middle. `alpha` scales every force, so as it cools the dots slow to a stop.
+ */
+function tick(nodes: GraphNode[], edges: Edge[], held: GraphNode | null, alpha: number): void {
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
       const a = nodes[i];
@@ -74,8 +84,7 @@ function tick(nodes: GraphNode[], edges: Edge[], held: GraphNode | null): number
         dy = Math.random() - 0.5;
         distanceSq = 0.01;
       }
-      if (distanceSq > 250_000) continue;
-      const push = 900 / distanceSq;
+      const push = (900 / distanceSq) * alpha;
       a.vx -= dx * push;
       a.vy -= dy * push;
       b.vx += dx * push;
@@ -86,22 +95,19 @@ function tick(nodes: GraphNode[], edges: Edge[], held: GraphNode | null): number
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const distance = Math.hypot(dx, dy) || 1;
-    const pull = ((distance - 70) / distance) * 0.02;
+    const pull = ((distance - 70) / distance) * 0.06 * alpha;
     from.vx += dx * pull;
     from.vy += dy * pull;
     to.vx -= dx * pull;
     to.vy -= dy * pull;
   }
-  let movement = 0;
   for (const node of nodes) {
-    node.vx = (node.vx - node.x * 0.004) * 0.82;
-    node.vy = (node.vy - node.y * 0.004) * 0.82;
+    node.vx = (node.vx - node.x * 0.01 * alpha) * 0.6;
+    node.vy = (node.vy - node.y * 0.01 * alpha) * 0.6;
     if (node === held) continue;
     node.x += node.vx;
     node.y += node.vy;
-    movement += Math.abs(node.vx) + Math.abs(node.vy);
   }
-  return movement;
 }
 
 function cssVar(element: Element, name: string): string {
@@ -128,7 +134,7 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
     let dragged = false;
     /** Until the user pans or zooms, the view keeps every dot in frame. */
     let fitting = true;
-    let warmth = 1;
+    let alpha = ALPHA_START;
     let frame = 0;
 
     const neighbours = new Map<GraphNode, Set<GraphNode>>();
@@ -208,7 +214,9 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
       context.globalAlpha = 1;
     }
 
-    function fit() {
+    /** Moves the view toward one that fits every dot; `ease` 1 jumps straight there. */
+    function fit(ease: number) {
+      if (!nodes.length) return;
       const padding = 40;
       const xs = nodes.map((node) => node.x);
       const ys = nodes.map((node) => node.y);
@@ -218,19 +226,27 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
         (canvas.clientWidth - padding * 2) / Math.max(right - left, 1),
         (canvas.clientHeight - padding * 2) / Math.max(bottom - top + 20, 1),
       );
-      view.zoom = Math.max(0.25, zoom);
-      view.x = (-(left + right) / 2) * view.zoom;
-      view.y = (-(top + bottom) / 2) * view.zoom;
+      const target = Math.max(0.25, zoom);
+      view.zoom += (target - view.zoom) * ease;
+      view.x += ((-(left + right) / 2) * view.zoom - view.x) * ease;
+      view.y += ((-(top + bottom) / 2) * view.zoom - view.y) * ease;
     }
 
     function loop() {
-      if (warmth > 0.02 || held) {
-        const movement = tick(nodes, edges, held);
-        warmth = Math.min(1, movement / Math.max(nodes.length, 1));
-        if (fitting && !held && nodes.length) fit();
+      // Once cool, the dots stay exactly where they are: no drifting or shaking.
+      if (alpha > ALPHA_STILL || held) {
+        tick(nodes, edges, held, Math.max(alpha, ALPHA_STILL));
+        alpha *= ALPHA_DECAY;
+        if (fitting && !held) fit(0.15);
       }
       draw();
       frame = requestAnimationFrame(loop);
+    }
+
+    // Lay the graph out before showing it.
+    for (let step = 0; step < SETTLE_STEPS && alpha > ALPHA_STILL; step++) {
+      tick(nodes, edges, null, alpha);
+      alpha *= ALPHA_DECAY;
     }
 
     function handleDown(event: PointerEvent) {
@@ -249,7 +265,8 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
         held.x = point.x;
         held.y = point.y;
         dragged = true;
-        warmth = 1;
+        // Warm up a little so linked dots follow, then cool again after letting go.
+        alpha = Math.max(alpha, 0.3);
       } else if (panning) {
         view.x = event.clientX - panning.x;
         view.y = event.clientY - panning.y;
@@ -280,6 +297,7 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
     }
 
     size();
+    fit(1);
     const resize = new ResizeObserver(size);
     resize.observe(canvas);
     const listening = new AbortController();

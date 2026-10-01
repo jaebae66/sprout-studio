@@ -630,7 +630,9 @@ input[type="range"] {
 
 .note-list {
   display: grid;
-  gap: 2px;
+  /* Keep notes packed at the top instead of spreading out to fill the sidebar. */
+  align-content: start;
+  gap: 1px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -639,7 +641,7 @@ input[type="range"] {
 .note-link {
   display: grid;
   width: 100%;
-  padding: 6px 10px;
+  padding: 4px 10px;
   border: 0;
   border-radius: 10px;
   background: transparent;
