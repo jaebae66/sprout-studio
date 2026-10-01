@@ -2,33 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#eef7ef">
-  <title>Sprout Studio</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sprout Study</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mali:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
-  <link rel="stylesheet" href="./src/home/home.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mali:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
 </head>
 <body>
-  <main>
-    <header>
-      <div class="mark" aria-hidden="true">🌱</div>
-      <div>
-        <h1>Sprout Studio</h1>
-        <p>Sprout Study · Sprout Bindery</p>
-      </div>
-    </header>
-    <nav class="tools" aria-label="Sprout tools">
-      <a class="tool" href="Sprout%20Study.html">
-        <span class="icon" aria-hidden="true">📚</span>
-        <span><h2>Sprout Study</h2><span class="open">Open study planner</span></span>
-      </a>
-      <a class="tool" href="Sprout%20Bindery.html">
-        <span class="icon" aria-hidden="true">📗</span>
-        <span><h2>Sprout Bindery</h2><span class="open">Open book maker</span></span>
-      </a>
-    </nav>
-    <footer>Study progress is saved in this browser, not to a shared account. Use the backup option in Sprout Study to move it to another browser.</footer>
-  </main>
+  <div id="root"></div>
+  <script type="module" src="./src/study/main.tsx"></script>
 </body>
 </html>
