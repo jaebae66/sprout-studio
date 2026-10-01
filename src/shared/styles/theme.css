@@ -1,0 +1,51 @@
+/* Colour and font tokens shared by Sprout Bindery and Sprout Study. */
+:root {
+  /* Pages can swap these two to recolour the accent in light and dark mode. */
+  --accent-l: #3fae6a;
+  --accent-d: #6fd394;
+  --accent: var(--accent-l);
+
+  --bg: #eef7ef;
+  --panel: #ffffff;
+  --panel-solid: #ffffff;
+  --fg: #1f3a2a;
+  --muted: #5c7a66;
+  --line: #cfe5d4;
+  --soft: #e2f3e6;
+  --pink: #f3a9b8;
+  --warn: #e6a23c;
+  --bad: #d9646f;
+
+  --display: "Mali", "Comic Sans MS", cursive;
+  --body: "Nunito", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+
+/* Dark palette: follows the device unless the page sets data-theme="light". */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --accent: var(--accent-d);
+    --bg: #13211a;
+    --panel: #1a2c22;
+    --panel-solid: #1a2c22;
+    --fg: #e3f4e8;
+    --muted: #9dbfa8;
+    --line: #2e4a3a;
+    --soft: #21382b;
+    --pink: #e78fa2;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --accent: var(--accent-d);
+  --bg: #13211a;
+  --panel: #1a2c22;
+  --panel-solid: #1a2c22;
+  --fg: #e3f4e8;
+  --muted: #9dbfa8;
+  --line: #2e4a3a;
+  --soft: #21382b;
+  --pink: #e78fa2;
+}
