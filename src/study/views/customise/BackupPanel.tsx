@@ -3,6 +3,7 @@ import { Panel } from '../../../shared/components/Panel';
 import { useBackupSaver } from '../../hooks/useBackupSaver';
 import { today } from '../../lib/dates';
 import { parseBackup, serializeBackup } from '../../lib/storage';
+import { vault } from '../../lib/vault';
 import { useStudy } from '../../StudyContext';
 
 export function BackupPanel() {
@@ -22,7 +23,9 @@ export function BackupPanel() {
   return (
     <Panel className="stack tight" title="Keep your progress safe">
       <p className="muted">
-        Your progress lives in this browser. Save a backup file now and then, so clearing your browser never wipes it.
+        {vault
+          ? 'Your notes are Markdown files in your vault folder. The rest of your progress lives in this app: save a backup file now and then to keep it safe.'
+          : 'Your progress lives in this browser. Save a backup file now and then, so clearing your browser never wipes it.'}
       </p>
       <div className="row">
         {backup.canSave && (

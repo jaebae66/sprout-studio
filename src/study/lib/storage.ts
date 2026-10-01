@@ -1,5 +1,5 @@
 import { DEFAULT_CARDS, DEFAULT_SETTINGS, STORAGE_KEY } from '../constants';
-import type { StudyData } from '../types';
+import type { Note, StudyData } from '../types';
 import { today } from './dates';
 
 export function createDefaultData(): StudyData {
@@ -10,20 +10,24 @@ export function createDefaultData(): StudyData {
     units: [],
     cards: DEFAULT_CARDS.map((card) => ({ ...card })),
     tasks: [],
-    notes: '',
+    pages: [],
     stats: { day: today(), mins: 0, sessions: 0, total: 0 },
     quizBest: 0,
   };
 }
 
+/** Saves from before multiple notes had one `notes` text box instead of `pages`. */
+type StoredData = Partial<StudyData> & { notes?: string };
+
 /** Fills in anything missing from older saves with defaults. */
-function withDefaults(stored: Partial<StudyData>): StudyData {
+function withDefaults({ notes, ...stored }: StoredData): StudyData {
   const defaults = createDefaultData();
-  return { ...defaults, ...stored, settings: { ...defaults.settings, ...stored.settings } };
+  const pages: Note[] = stored.pages ?? (notes?.trim() ? [{ name: 'Notes', body: notes, updated: Date.now() }] : []);
+  return { ...defaults, ...stored, pages, settings: { ...defaults.settings, ...stored.settings } };
 }
 
 export function loadData(): StudyData {
-  let stored: Partial<StudyData> | null = null;
+  let stored: StoredData | null = null;
   try {
     stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
   } catch {
@@ -54,7 +58,7 @@ export function serializeBackup(data: StudyData): string {
 
 /** Throws if the text isn't a Sprout Study backup. */
 export function parseBackup(text: string): StudyData {
-  const parsed = JSON.parse(text) as Partial<StudyData>;
+  const parsed = JSON.parse(text) as StoredData;
   if (!parsed.units || !parsed.cards) throw new Error('Not a Sprout Study backup');
   return withDefaults(parsed);
 }

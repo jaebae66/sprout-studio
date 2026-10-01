@@ -60,6 +60,15 @@ export interface DailyStats {
   total: number;
 }
 
+/** One Markdown note. In the desktop app each is a `<name>.md` file in the vault folder. */
+export interface Note {
+  /** The title, which is also the file name and what [[links]] point to. */
+  name: string;
+  body: string;
+  /** Last edited, in milliseconds since 1970. */
+  updated: number;
+}
+
 export interface StudyData {
   name: string;
   course: string;
@@ -67,7 +76,8 @@ export interface StudyData {
   units: Subject[];
   cards: Flashcard[];
   tasks: Task[];
-  notes: string;
+  /** Notes kept in the browser. The desktop app moves these into its vault folder. */
+  pages: Note[];
   stats: DailyStats;
   quizBest: number;
 }
