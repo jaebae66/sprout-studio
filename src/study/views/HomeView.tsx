@@ -1,5 +1,6 @@
 import { Button } from '../../shared/components/Button';
 import { Panel } from '../../shared/components/Panel';
+import { Header } from '../components/Header';
 import { ProgressBar } from '../components/ProgressBar';
 import { StatTile } from '../components/StatTile';
 import { TaskItem } from '../components/TaskItem';
@@ -27,6 +28,7 @@ export function HomeView({ timer, onOpenPlanner }: HomeViewProps) {
 
   return (
     <>
+      <Header />
       <div className="grid">
         <TimerPanel timer={timer} />
         <Panel className="stack" title={`${icon('home')} Your garden today`}>

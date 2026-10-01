@@ -1,14 +1,17 @@
-// Sprout Study as a desktop app. Notes are plain `<name>.md` files in a vault folder
-// (Documents\Sprout Vault unless you pick another), so other editors can open them too.
+// Sprout Studio as a desktop app: notes, study tools and the book maker in one window.
+// Notes are plain `<name>.md` files in a vault folder (Documents\Sprout Vault unless
+// you pick another), so other editors can open them too.
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+const { openDatabase } = require('./database.cjs');
 
-const PAGE = path.join(__dirname, '..', 'dist', 'Sprout Study.html');
+const PAGE = path.join(__dirname, '..', 'dist', 'index.html');
 const PAGE_URL = pathToFileURL(PAGE).href;
 const ICON = path.join(__dirname, '..', 'icons', 'sprout-study.ico');
 const CONFIG = path.join(app.getPath('userData'), 'config.json');
+const DATABASE = path.join(app.getPath('userData'), 'sprout-studio.db');
 
 /** Same rule as cleanNoteName in src/study/lib/notes.ts: nothing that could leave the vault folder. */
 const UNSAFE_NAME = /[\\/:*?"<>|#^[\]\n\r\t\0]/;
@@ -16,6 +19,7 @@ const UNSAFE_NAME = /[\\/:*?"<>|#^[\]\n\r\t\0]/;
 let mainWindow = null;
 let vaultFolder = '';
 let watcher = null;
+let database = null;
 /** When the app last wrote each file, so its own saves aren't reported back as outside changes. */
 const ownWrites = new Map();
 
@@ -57,13 +61,40 @@ function openVault(folder) {
   });
 }
 
-/** Only our own page may use the vault. */
+function fromOurPage(event) {
+  return event.senderFrame?.url.split('#')[0] === PAGE_URL;
+}
+
+/** Only our own page may use the vault or the database. */
 function handle(channel, listener) {
   ipcMain.handle(channel, (event, ...args) => {
-    if (event.senderFrame?.url.split('#')[0] !== PAGE_URL) throw new Error('Blocked');
+    if (!fromOurPage(event)) throw new Error('Blocked');
     return listener(...args);
   });
 }
+
+/** Like `handle`, for calls the page waits on (it reads its data before the first render). Errors become `fallback`. */
+function handleSync(channel, fallback, listener) {
+  ipcMain.on(channel, (event, ...args) => {
+    try {
+      event.returnValue = fromOurPage(event) ? listener(...args) : fallback;
+    } catch (error) {
+      console.error(`${channel} failed:`, error);
+      event.returnValue = fallback;
+    }
+  });
+}
+
+handleSync('db:load', null, () => database.load());
+handleSync('db:save', false, (data) => {
+  database.save(data);
+  return true;
+});
+handleSync('db:get-preference', null, (key) => database.getPreference(key));
+handleSync('db:set-preference', false, (key, value) => {
+  database.setPreference(key, value);
+  return true;
+});
 
 handle('vault:folder', () => vaultFolder);
 
@@ -119,7 +150,7 @@ function createWindow() {
     height: 860,
     minWidth: 420,
     minHeight: 400,
-    title: 'Sprout Study',
+    title: 'Sprout Studio',
     icon: ICON,
     autoHideMenuBar: true,
     backgroundColor: '#eef7ef',
@@ -153,9 +184,11 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.whenReady().then(() => {
+    database = openDatabase(DATABASE);
     openVault(readConfig().vault ?? path.join(app.getPath('documents'), 'Sprout Vault'));
     createWindow();
   });
 
   app.on('window-all-closed', () => app.quit());
+  app.on('will-quit', () => database?.close());
 }

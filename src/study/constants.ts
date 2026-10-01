@@ -3,11 +3,11 @@ import type { Flashcard, IconPack, Settings, TabId } from './types';
 export const STORAGE_KEY = 'sprout-study-v1';
 
 export const ICON_PACKS = {
-  sprout: { name: 'Sprout garden', mascot: '🌱', home: '🏡', units: '🌿', cards: '🍀', quiz: '🌼', planner: '🗓️', notes: '📝', custom: '🎨', done: '🌸', timer: '⏳' },
-  froggy: { name: 'Froggy pond', mascot: '🐸', home: '🪷', units: '🍄', cards: '🐛', quiz: '🦋', planner: '🐌', notes: '🌾', custom: '🎀', done: '⭐', timer: '🫧' },
-  kitty: { name: 'Kitty cafe', mascot: '🐱', home: '🧸', units: '🐾', cards: '🧶', quiz: '🐟', planner: '🍵', notes: '🍓', custom: '🎀', done: '💚', timer: '☕' },
-  techy: { name: 'Cosy tech', mascot: '🤖', home: '🖥️', units: '💾', cards: '⌨️', quiz: '🖱️', planner: '📡', notes: '📎', custom: '🔧', done: '✅', timer: '⏱️' },
-  bunny: { name: 'Bunny meadow', mascot: '🐰', home: '🌷', units: '🥕', cards: '🌙', quiz: '🍡', planner: '🧺', notes: '✉️', custom: '🌈', done: '💮', timer: '🕰️' },
+  sprout: { name: 'Sprout garden', mascot: '🌱', home: '🏡', units: '🌿', cards: '🍀', quiz: '🌼', planner: '🗓️', notes: '📝', graph: '🌳', bindery: '📗', custom: '🎨', done: '🌸', timer: '⏳' },
+  froggy: { name: 'Froggy pond', mascot: '🐸', home: '🪷', units: '🍄', cards: '🐛', quiz: '🦋', planner: '🐌', notes: '🌾', graph: '🕸️', bindery: '🪵', custom: '🎀', done: '⭐', timer: '🫧' },
+  kitty: { name: 'Kitty cafe', mascot: '🐱', home: '🧸', units: '🐾', cards: '🧶', quiz: '🐟', planner: '🍵', notes: '🍓', graph: '✨', bindery: '📚', custom: '🎀', done: '💚', timer: '☕' },
+  techy: { name: 'Cosy tech', mascot: '🤖', home: '🖥️', units: '💾', cards: '⌨️', quiz: '🖱️', planner: '📡', notes: '📎', graph: '🛰️', bindery: '💿', custom: '🔧', done: '✅', timer: '⏱️' },
+  bunny: { name: 'Bunny meadow', mascot: '🐰', home: '🌷', units: '🥕', cards: '🌙', quiz: '🍡', planner: '🧺', notes: '✉️', graph: '🌌', bindery: '📖', custom: '🌈', done: '💮', timer: '🕰️' },
 } satisfies Record<string, IconPack>;
 export type IconPackName = keyof typeof ICON_PACKS;
 
@@ -36,15 +36,21 @@ export type WallpaperId = (typeof WALLPAPERS)[number]['id'];
 /** Colour of the wallpaper patterns. */
 export const WALL_INK = { light: '#bfe3c8', dark: '#24402f' };
 
+/** The side ribbon, top to bottom. Customise sits on its own at the bottom. */
 export const TABS: readonly { id: TabId; label: string }[] = [
-  { id: 'home', label: 'Home' },
+  { id: 'notes', label: 'Notes' },
+  { id: 'graph', label: 'Graph' },
+  { id: 'home', label: 'Today' },
+  { id: 'planner', label: 'Planner' },
   { id: 'units', label: 'Subjects' },
   { id: 'cards', label: 'Flashcards' },
   { id: 'quiz', label: 'Quiz' },
-  { id: 'planner', label: 'Planner' },
-  { id: 'notes', label: 'Notes' },
+  { id: 'bindery', label: 'Book maker' },
   { id: 'custom', label: 'Customise' },
 ];
+
+/** Opens here the first time; after that, wherever you left off. */
+export const DEFAULT_TAB: TabId = 'notes';
 
 export const SUBJECT_STATUSES = ['Not started', 'In progress', 'Reviewed', 'Complete'] as const;
 export const STATUS_COMPLETE = 3;

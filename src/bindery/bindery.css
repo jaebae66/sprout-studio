@@ -1,34 +1,15 @@
-/* Layout: a craft bench. Book details + cover on the left, chapters on the right;
-   converter and free-book shelf below. */
+/* Book maker tab: a craft bench. Book details + cover on the left, chapters on the right;
+   converter and free-book shelf below. Everything is scoped to .bindery. */
 
-body {
-  background-image: radial-gradient(var(--line) 3px, transparent 3.5px);
-  background-size: 30px 30px;
-  background-attachment: fixed;
-}
-
-h1 {
-  font-size: clamp(1.7rem, 4.5vw, 2.4rem);
-}
-
-h2 {
+.bindery h2 {
   font-size: 1.3rem;
 }
 
-h3 {
+.bindery h3 {
   font-size: 1.02rem;
 }
 
-.wrap {
-  display: grid;
-  gap: 18px;
-  max-width: 1080px;
-  margin: 0 auto;
-  padding-inline: 16px;
-  padding-block: 22px 56px;
-}
-
-.panel {
+.bindery .panel {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
@@ -40,79 +21,35 @@ h3 {
   background: var(--panel);
 }
 
-.cols {
+.bindery .cols {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: 18px;
 }
 
 @media (max-width: 820px) {
-  .cols {
+  .bindery .cols {
     grid-template-columns: 1fr;
   }
 }
 
-/* ---------- Hero ---------- */
-
-.hero {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-}
-
-.hero p {
-  color: var(--muted);
-}
-
-.hero-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.badge {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 70px;
-  height: 70px;
-  border: 3px dashed var(--accent);
-  border-radius: 50%;
-  background: var(--soft);
-  font-size: 2.3rem;
-  animation: bob 3s ease-in-out infinite;
-}
-
-@keyframes bob {
-  50% {
-    transform: translateY(-5px) rotate(4deg);
-  }
-}
-
-.eyebrow {
-  color: var(--accent);
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-}
-
 /* ---------- Form fields ---------- */
 
-.field {
+.bindery .field {
   display: grid;
   gap: 4px;
 }
 
-.field label,
-.lbl {
+.bindery .field label,
+.bindery .lbl {
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 800;
 }
 
-input[type="text"],
-select,
-textarea {
+.bindery input[type="text"],
+.bindery select,
+.bindery textarea {
   width: 100%;
   min-width: 0;
   padding: 8px 12px;
@@ -121,12 +58,12 @@ textarea {
   background: var(--bg);
 }
 
-textarea {
+.bindery textarea {
   resize: vertical;
   font-size: 0.92rem;
 }
 
-.two {
+.bindery .two {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -134,14 +71,14 @@ textarea {
 
 /* ---------- Cover ---------- */
 
-.coverbox {
+.bindery .coverbox {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 16px;
 }
 
-.cover-canvas {
+.bindery .cover-canvas {
   flex: none;
   width: 150px;
   max-width: 100%;
@@ -151,7 +88,7 @@ textarea {
   box-shadow: 0 8px 0 var(--line);
 }
 
-.cover-controls {
+.bindery .cover-controls {
   display: grid;
   flex: 1 1 180px;
   grid-template-columns: minmax(0, 1fr);
@@ -159,13 +96,13 @@ textarea {
   min-width: 0;
 }
 
-.seg {
+.bindery .seg {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.seg button {
+.bindery .seg button {
   padding: 3px 12px;
   border: 2px solid var(--line);
   border-radius: 999px;
@@ -175,7 +112,7 @@ textarea {
   cursor: pointer;
 }
 
-.seg button[aria-pressed="true"] {
+.bindery .seg button[aria-pressed="true"] {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--panel-solid);
@@ -183,7 +120,7 @@ textarea {
 
 /* ---------- Chapters ---------- */
 
-.drop {
+.bindery .drop {
   padding: 16px;
   border: 3px dashed var(--line);
   border-radius: 18px;
@@ -192,30 +129,30 @@ textarea {
   text-align: center;
 }
 
-.drop.over {
+.bindery .drop.over {
   border-color: var(--accent);
   background: var(--soft);
 }
 
-.link-label {
+.bindery .link-label {
   color: var(--accent);
   font-weight: 800;
   text-decoration: underline;
   cursor: pointer;
 }
 
-.paste summary {
+.bindery .paste summary {
   font-weight: 800;
   cursor: pointer;
 }
 
-.paste-body {
+.bindery .paste-body {
   display: grid;
   gap: 8px;
   margin-top: 10px;
 }
 
-.chapters {
+.bindery .chapters {
   display: grid;
   gap: 8px;
   margin: 0;
@@ -224,7 +161,7 @@ textarea {
   counter-reset: ch;
 }
 
-.ch {
+.bindery .ch {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -235,7 +172,7 @@ textarea {
   background: var(--bg);
 }
 
-.ch::before {
+.bindery .ch::before {
   flex: none;
   width: 22px;
   color: var(--accent);
@@ -246,19 +183,19 @@ textarea {
   content: counter(ch);
 }
 
-.ch input {
+.bindery .ch input {
   flex: 1;
   padding: 5px 10px;
 }
 
-.ch .wc {
+.bindery .ch .wc {
   color: var(--muted);
   font-family: var(--mono);
   font-size: 0.72rem;
   white-space: nowrap;
 }
 
-.ch button {
+.bindery .ch button {
   padding: 2px 4px;
   border: none;
   border-radius: 8px;
@@ -268,11 +205,11 @@ textarea {
   cursor: pointer;
 }
 
-.ch button:hover {
+.bindery .ch button:hover {
   color: var(--accent);
 }
 
-.chapter-actions {
+.bindery .chapter-actions {
   justify-content: space-between;
   padding-top: 14px;
   border-top: 2px dashed var(--line);
@@ -280,7 +217,7 @@ textarea {
 
 /* ---------- Converter ---------- */
 
-.result {
+.bindery .result {
   display: grid;
   gap: 10px;
   padding: 14px;
@@ -288,30 +225,30 @@ textarea {
   background: var(--soft);
 }
 
-.result-title {
+.bindery .result-title {
   font-family: var(--display);
   font-size: 1.15rem;
 }
 
-.mono {
+.bindery .mono {
   font-family: var(--mono);
   font-size: 0.8rem;
 }
 
-.error {
+.bindery .error {
   color: var(--bad);
   font-weight: 700;
 }
 
 /* ---------- Free-book shelf ---------- */
 
-.shelf {
+.bindery .shelf {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
 
-.shelf a {
+.bindery .shelf a {
   display: grid;
   gap: 4px;
   padding: 14px;
@@ -323,18 +260,18 @@ textarea {
   transition: transform 0.15s;
 }
 
-.shelf a:hover {
+.bindery .shelf a:hover {
   border-color: var(--accent);
   transform: translateY(-3px);
 }
 
-.shelf b {
+.bindery .shelf b {
   color: var(--accent);
   font-family: var(--display);
   font-size: 1.05rem;
 }
 
-.shelf span {
+.bindery .shelf span {
   color: var(--muted);
   font-size: 0.88rem;
 }

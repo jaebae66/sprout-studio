@@ -1,14 +1,11 @@
 import { useRef, useState } from 'react';
 import { Panel } from '../shared/components/Panel';
-import { Toast } from '../shared/components/Toast';
-import { useToast } from '../shared/hooks/useToast';
 import { downloadBlob, toSafeFilename } from '../shared/lib/download';
 import { BookDetailsForm } from './components/BookDetailsForm';
 import { ChaptersPanel } from './components/ChaptersPanel';
 import { CoverDesigner } from './components/CoverDesigner';
 import { EpubConverter } from './components/EpubConverter';
 import { FreeBookShelf } from './components/FreeBookShelf';
-import { Hero } from './components/Hero';
 import { useChapters } from './hooks/useChapters';
 import { readChapterFiles } from './lib/chapterFiles';
 import { canvasToJpeg } from './lib/cover';
@@ -21,13 +18,18 @@ const INITIAL_COVER: CoverSettings = { color: 'mint', pattern: 'leaves', sticker
 
 const addedMessage = (count: number) => `Added ${count} chapter${count === 1 ? '' : 's'} 🍃`;
 
-export function App() {
+interface BinderyViewProps {
+  notify: (message: string) => void;
+}
+
+/** Sprout Bindery: makes EPUBs from text, and turns EPUBs back into text. */
+export function BinderyView({ notify }: BinderyViewProps) {
   const [book, setBook] = useState(INITIAL_BOOK);
   const [cover, setCover] = useState(INITIAL_COVER);
   const [conversion, setConversion] = useState<ConversionState | null>(null);
   const chapters = useChapters();
-  const { message, notify } = useToast(2600);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
 
   /* ---------- Book & cover ---------- */
 
@@ -114,47 +116,49 @@ export function App() {
   function handleEditEpub(epub: OpenedEpub) {
     chapters.replaceAll(sectionsToChapters(epub.sections));
     setBook((current) => ({ ...current, title: epub.title, author: epub.author }));
-    notify('Loaded into the bindery above');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    notify('Loaded into the book maker above');
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
   return (
-    <>
-      <div className="wrap">
-        <Hero />
-        <div className="cols">
-          <Panel title="🌱 Your book">
-            <BookDetailsForm book={book} onChange={updateBook} />
-            <h3>Cover</h3>
-            <CoverDesigner
-              canvasRef={canvasRef}
-              title={book.title}
-              author={book.author}
-              cover={cover}
-              onChange={updateCover}
-              onImageChange={handleCoverImage}
-            />
-          </Panel>
-          <ChaptersPanel
-            chapters={chapters.items}
-            onAddFiles={handleAddFiles}
-            onAddText={handleAddText}
-            onRename={chapters.rename}
-            onMove={chapters.move}
-            onRemove={chapters.remove}
-            onRemoveAll={handleRemoveAll}
-            onMakeEpub={handleMakeEpub}
-          />
-        </div>
-        <EpubConverter
-          conversion={conversion}
-          onOpen={handleOpenEpub}
-          onDownload={handleDownloadText}
-          onEdit={handleEditEpub}
-        />
-        <FreeBookShelf />
+    <div className="bindery stack" ref={topRef}>
+      <div className="bindery-intro">
+        <h2>Book maker</h2>
+        <p className="muted">
+          Turn notes, stories and text files into an EPUB for your e-reader, or turn an EPUB back into plain text.
+        </p>
       </div>
-      <Toast message={message} />
-    </>
+      <div className="cols">
+        <Panel title="🌱 Your book">
+          <BookDetailsForm book={book} onChange={updateBook} />
+          <h3>Cover</h3>
+          <CoverDesigner
+            canvasRef={canvasRef}
+            title={book.title}
+            author={book.author}
+            cover={cover}
+            onChange={updateCover}
+            onImageChange={handleCoverImage}
+          />
+        </Panel>
+        <ChaptersPanel
+          chapters={chapters.items}
+          onAddFiles={handleAddFiles}
+          onAddText={handleAddText}
+          onRename={chapters.rename}
+          onMove={chapters.move}
+          onRemove={chapters.remove}
+          onRemoveAll={handleRemoveAll}
+          onMakeEpub={handleMakeEpub}
+        />
+      </div>
+      <EpubConverter
+        conversion={conversion}
+        onOpen={handleOpenEpub}
+        onDownload={handleDownloadText}
+        onEdit={handleEditEpub}
+      />
+      <FreeBookShelf />
+    </div>
   );
 }

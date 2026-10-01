@@ -2,43 +2,53 @@ import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent, type
 import { Button } from '../../shared/components/Button';
 import { Panel } from '../../shared/components/Panel';
 import { cx } from '../../shared/lib/classNames';
-import { NoteGraph } from '../components/NoteGraph';
 import { useNotes, type NotesStore } from '../hooks/useNotes';
 import { backlinks, cleanNoteName, findNote, renderNote, searchNotes } from '../lib/notes';
+import { loadOpenNote, markWelcomed, saveOpenNote, wasWelcomed } from '../lib/storage';
 import { useStudy } from '../StudyContext';
 import type { Note } from '../types';
 
-/** Remembers the open note between visits. */
-const OPEN_NOTE_KEY = 'sprout-study-open-note';
-
 type Mode = 'edit' | 'preview';
 
-function rememberedNote(): string | null {
-  try {
-    return localStorage.getItem(OPEN_NOTE_KEY);
-  } catch {
-    return null;
-  }
-}
+const WELCOME_NOTE = `# Welcome to Sprout Studio 🌱
+
+This is your notes space. Everything here is plain Markdown.
+
+- Make a new note with **+ New**, or link to one that doesn't exist yet, like [[My first idea]], and click the link.
+- Press **Ctrl+E** to switch between writing and reading.
+- Notes that link to this one show up under *Linked from* below.
+- The **Graph** tab on the left shows how your notes connect.
+
+The rest of your study tools (timer, planner, flashcards, quiz) and the **Book maker** are in the bar on the left.
+
+You can delete this note whenever you like.`;
 
 export function NotesView() {
   const store = useNotes();
   const { notes } = store;
   const { icon } = useStudy();
-  const [openName, setOpenName] = useState(rememberedNote);
+  const [openName, setOpenName] = useState(loadOpenNote);
   const [mode, setMode] = useState<Mode>('edit');
-  const [showGraph, setShowGraph] = useState(false);
   const [query, setQuery] = useState('');
 
   const open = openName ? findNote(notes, openName) : undefined;
+  const sorted = useMemo(() => [...notes].sort((first, second) => second.updated - first.updated), [notes]);
+
+  // The very first time, start with a welcome note open instead of an empty page.
+  useEffect(() => {
+    if (!store.ready || notes.length || wasWelcomed()) return;
+    markWelcomed();
+    show(store.create('Welcome', WELCOME_NOTE), 'preview');
+  });
 
   useEffect(() => {
-    try {
-      if (open) localStorage.setItem(OPEN_NOTE_KEY, open.name);
-    } catch {
-      // Storage blocked: just don't remember it.
-    }
+    if (open) saveOpenNote(open.name);
   }, [open]);
+
+  // Reopen the most recent note when the remembered one is gone.
+  useEffect(() => {
+    if (!open && sorted[0] && store.ready) setOpenName(sorted[0].name);
+  });
 
   // Ctrl+E switches between editing and reading, as in Obsidian.
   useEffect(() => {
@@ -54,7 +64,6 @@ export function NotesView() {
 
   function show(name: string, nextMode?: Mode) {
     setOpenName(name);
-    setShowGraph(false);
     if (nextMode) setMode(nextMode);
   }
 
@@ -65,7 +74,6 @@ export function NotesView() {
     else show(store.create(cleanNoteName(name)), 'edit');
   }
 
-  const sorted = useMemo(() => [...notes].sort((first, second) => second.updated - first.updated), [notes]);
   const results = useMemo(() => searchNotes(notes, query), [notes, query]);
 
   return (
@@ -86,13 +94,6 @@ export function NotesView() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
-        <button
-          type="button"
-          className={cx('note-link', 'graph-link', showGraph && 'current')}
-          onClick={() => setShowGraph((current) => !current)}
-        >
-          🕸️ Graph view
-        </button>
         <ul className="note-list">
           {query.trim()
             ? results.map(({ note, snippet }) => (
@@ -106,26 +107,7 @@ export function NotesView() {
         <VaultFooter store={store} />
       </Panel>
 
-      {showGraph ? (
-        <Panel
-          className="notes-main stack tight"
-          title="Graph"
-          aside={
-            <Button size="small" ghost onClick={() => setShowGraph(false)}>
-              Close
-            </Button>
-          }
-        >
-          {notes.length ? (
-            <>
-              <NoteGraph notes={notes} active={open?.name ?? null} onOpen={openOrCreate} />
-              <p className="muted small-text">Click a dot to open it · drag to move · scroll to zoom</p>
-            </>
-          ) : (
-            <div className="empty">No notes yet. Link notes with [[double brackets]] to grow the graph.</div>
-          )}
-        </Panel>
-      ) : open ? (
+      {open ? (
         <NoteEditor
           key={open.name}
           note={open}
@@ -142,7 +124,7 @@ export function NotesView() {
               <>
                 <p>{notes.length ? 'Pick a note on the left, or start a new one.' : 'No notes yet.'}</p>
                 <p className="small-text">
-                  Write in Markdown. Link notes with [[Note name]], and the graph shows how they connect.
+                  Write in Markdown. Link notes with [[Note name]], and the Graph tab shows how they connect.
                 </p>
               </>
             ) : (

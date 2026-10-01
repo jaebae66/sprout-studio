@@ -1,39 +1,42 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { BinderyView } from '../bindery/BinderyView';
 import { Toast } from '../shared/components/Toast';
 import { useToast } from '../shared/hooks/useToast';
-import { Header } from './components/Header';
-import { TabBar } from './components/TabBar';
-import { ICON_PACKS, TABS } from './constants';
+import { Ribbon } from './components/Ribbon';
+import { DEFAULT_TAB, ICON_PACKS, TABS } from './constants';
 import { useFlashcardSession } from './hooks/useFlashcardSession';
 import { usePomodoro } from './hooks/usePomodoro';
 import { useQuiz } from './hooks/useQuiz';
 import { useStudyData } from './hooks/useStudyData';
 import { useTheme } from './hooks/useTheme';
+import { loadOpenTab, saveOpenTab } from './lib/storage';
 import { wallpaperBackground } from './lib/wallpaper';
 import { StudyProvider } from './StudyContext';
 import type { IconKey, Settings, TabId } from './types';
 import { CustomiseView } from './views/customise/CustomiseView';
 import { FlashcardsView } from './views/FlashcardsView';
+import { GraphView } from './views/GraphView';
 import { HomeView } from './views/HomeView';
 import { NotesView } from './views/NotesView';
 import { PlannerView } from './views/PlannerView';
 import { QuizView } from './views/QuizView';
 import { SubjectsView } from './views/SubjectsView';
 
-/** The tab named in the URL (#planner etc.), or Home. */
-function tabFromHash(): TabId {
-  const hash = window.location.hash.slice(1);
-  return TABS.find((tab) => tab.id === hash)?.id ?? 'home';
+/** The tab named in the URL (#planner etc.), else the one open last time, else Notes. */
+function startingTab(): TabId {
+  const wanted = window.location.hash.slice(1) || loadOpenTab();
+  return TABS.find((tab) => tab.id === wanted)?.id ?? DEFAULT_TAB;
 }
 
 export function App() {
   const { data, update } = useStudyData();
   const { message, notify } = useToast(2200);
-  const [view, setView] = useState<TabId>(tabFromHash);
+  const [view, setView] = useState<TabId>(startingTab);
   const { settings } = data;
   const wallInk = useTheme(settings.theme, settings.accent);
 
   useEffect(() => {
+    saveOpenTab(view);
     try {
       history.replaceState(null, '', `#${view}`);
     } catch {
@@ -71,23 +74,29 @@ export function App() {
     [data, update, updateSettings, notify, icon, wallInk],
   );
 
-  const views: Record<TabId, ReactNode> = {
+  // The book maker is kept open in the background (below) so a half-made book survives switching tabs.
+  const views: Record<Exclude<TabId, 'bindery'>, ReactNode> = {
     home: <HomeView timer={timer} onOpenPlanner={() => setView('planner')} />,
     units: <SubjectsView />,
     cards: <FlashcardsView session={flashcards} />,
     quiz: <QuizView quiz={quiz} />,
     planner: <PlannerView />,
     notes: <NotesView />,
+    graph: <GraphView onOpenNote={() => setView('notes')} />,
     custom: <CustomiseView />,
   };
 
   return (
     <StudyProvider value={context}>
       <div className="wallpaper" style={{ background: wallpaperBackground(settings.wall, wallInk, settings.photo) }} />
-      <div className="wrap">
-        <Header />
-        <TabBar active={view} onSelect={setView} />
-        <main className="view">{views[view]}</main>
+      <div className="shell">
+        <Ribbon active={view} onSelect={setView} />
+        <main className={`pane pane-${view}`}>
+          {view !== 'bindery' && views[view]}
+          <div hidden={view !== 'bindery'}>
+            <BinderyView notify={notify} />
+          </div>
+        </main>
       </div>
       <Toast message={message} />
     </StudyProvider>

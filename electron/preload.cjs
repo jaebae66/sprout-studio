@@ -1,4 +1,5 @@
-// Gives the page the vault functions described by VaultBridge in src/study/lib/vault.ts, and nothing else.
+// Gives the page the vault and database functions described by VaultBridge and
+// DatabaseBridge in src/study/lib/vault.ts and src/study/lib/database.ts, and nothing else.
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('sproutVault', {
@@ -14,4 +15,11 @@ contextBridge.exposeInMainWorld('sproutVault', {
     ipcRenderer.on('vault:changed', forward);
     return () => ipcRenderer.removeListener('vault:changed', forward);
   },
+});
+
+contextBridge.exposeInMainWorld('sproutDb', {
+  load: () => ipcRenderer.sendSync('db:load'),
+  save: (data) => ipcRenderer.sendSync('db:save', data),
+  getPreference: (key) => ipcRenderer.sendSync('db:get-preference', key),
+  setPreference: (key, value) => ipcRenderer.sendSync('db:set-preference', key, value),
 });

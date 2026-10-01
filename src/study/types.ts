@@ -2,7 +2,8 @@ import type { AccentName, IconPackName, WallpaperId } from './constants';
 
 /*
  * Field names (units, q, a, pct, brk, …) match what earlier versions saved to
- * localStorage and to backup files, so existing progress keeps loading.
+ * localStorage and to backup files, so existing progress keeps loading. The desktop app's
+ * database (electron/database.cjs) maps them to clearer column names.
  */
 
 export type ThemePreference = 'system' | 'light' | 'dark';
@@ -82,7 +83,7 @@ export interface StudyData {
   quizBest: number;
 }
 
-export type TabId = 'home' | 'units' | 'cards' | 'quiz' | 'planner' | 'notes' | 'custom';
+export type TabId = 'home' | 'units' | 'cards' | 'quiz' | 'planner' | 'notes' | 'graph' | 'bindery' | 'custom';
 
 export type IconKey = TabId | 'mascot' | 'done' | 'timer';
 

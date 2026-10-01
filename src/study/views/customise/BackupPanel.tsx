@@ -24,7 +24,7 @@ export function BackupPanel() {
     <Panel className="stack tight" title="Keep your progress safe">
       <p className="muted">
         {vault
-          ? 'Your notes are Markdown files in your vault folder. The rest of your progress lives in this app: save a backup file now and then to keep it safe.'
+          ? 'Your notes are Markdown files in your vault folder. The rest of your progress is in the app’s database: save a backup file now and then to keep it safe.'
           : 'Your progress lives in this browser. Save a backup file now and then, so clearing your browser never wipes it.'}
       </p>
       <div className="row">

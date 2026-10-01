@@ -196,11 +196,12 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
         context.globalAlpha = !focus || lit ? 1 : 0.35;
         context.fillStyle = node === focus ? colours.accent : node.missing ? colours.line : colours.muted;
         context.beginPath();
-        context.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        // At least 5px across on screen, however far out you zoom.
+        context.arc(node.x, node.y, Math.max(node.radius, 5 / view.zoom), 0, Math.PI * 2);
         context.fill();
         if (lit || view.zoom > 0.75 || nodes.length < 30) {
           context.fillStyle = node.missing ? colours.muted : colours.fg;
-          context.fillText(node.label, node.x, node.y + node.radius + 3 / view.zoom);
+          context.fillText(node.label, node.x, node.y + Math.max(node.radius, 5 / view.zoom) + 3 / view.zoom);
         }
       }
       context.restore();
