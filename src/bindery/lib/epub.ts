@@ -1,7 +1,8 @@
 import JSZip from 'jszip';
-import { BOOK_CSS, MAX_TITLE_LENGTH } from '../constants';
-import type { BookDetails, Chapter, ChapterContent, OpenedEpub, TextFormat } from '../types';
+import { MAX_TITLE_LENGTH } from '../constants';
+import type { BookDetails, Chapter, ChapterContent, OpenedEpub, PageSettings, TextFormat } from '../types';
 import { escapeHtml } from './html';
+import { bookCss } from './pageStyle';
 import { elementToText, htmlToChapter } from './text';
 
 /* ---------- Making an EPUB ---------- */
@@ -19,6 +20,7 @@ interface BuildEpubInput {
   book: BookDetails;
   chapters: Chapter[];
   coverJpeg: Blob;
+  page: PageSettings;
 }
 
 interface BookMetadata {
@@ -30,7 +32,7 @@ interface BookMetadata {
   modified: string;
 }
 
-export async function buildEpub({ book, chapters, coverJpeg }: BuildEpubInput): Promise<Blob> {
+export async function buildEpub({ book, chapters, coverJpeg, page }: BuildEpubInput): Promise<Blob> {
   const metadata: BookMetadata = {
     id: createBookId(),
     title: book.title.trim() || 'Untitled',
@@ -49,11 +51,16 @@ export async function buildEpub({ book, chapters, coverJpeg }: BuildEpubInput): 
   const content = zip.folder('OEBPS');
   if (!content) throw new Error('Could not create the book folder');
 
-  content.file('style.css', BOOK_CSS);
+  content.file('style.css', bookCss(page));
   content.file('images/cover.jpg', coverJpeg);
   content.file(
     'cover.xhtml',
-    xhtmlPage('Cover', `<div class="cover"><img src="images/cover.jpg" alt="${escapeHtml(title)}"/></div>`, language),
+    xhtmlPage(
+      'Cover',
+      `<div class="cover"><img src="images/cover.jpg" alt="${escapeHtml(title)}"/></div>`,
+      language,
+      'cover-page',
+    ),
   );
   chapters.forEach((chapter, index) => {
     const body = `<section epub:type="chapter"><h1>${escapeHtml(chapter.title)}</h1>\n${chapter.html}</section>`;
@@ -74,13 +81,13 @@ function createBookId(): string {
   return `urn:uuid:${unique}`;
 }
 
-function xhtmlPage(title: string, body: string, language: string): string {
+function xhtmlPage(title: string, body: string, language: string, bodyClass = ''): string {
   return [
     '<?xml version="1.0" encoding="utf-8"?>',
     '<!DOCTYPE html>',
     `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${language}" lang="${language}">`,
     `<head><meta charset="utf-8"/><title>${escapeHtml(title)}</title><link rel="stylesheet" type="text/css" href="style.css"/></head>`,
-    `<body>${body}</body>`,
+    `<body${bodyClass ? ` class="${bodyClass}"` : ''}>${body}</body>`,
     '</html>',
   ].join('\n');
 }

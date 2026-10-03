@@ -1,3 +1,4 @@
+import type { PaperStyle } from '../shared/lib/paper';
 import type { AccentName, IconPackName, WallpaperId } from './constants';
 
 /*
@@ -39,6 +40,18 @@ export interface Task {
   done: boolean;
 }
 
+/** Your own colours for the whole app, as hex (#rrggbb). */
+export interface ColorSet {
+  accent: string;
+  background: string;
+  /** Panels and cards. */
+  card: string;
+  text: string;
+  /** Secondary text, hints and labels. */
+  faded: string;
+  border: string;
+}
+
 export interface Settings {
   wall: WallpaperId;
   icons: IconPackName;
@@ -50,6 +63,10 @@ export interface Settings {
   focus: number;
   /** Break length in minutes. */
   brk: number;
+  /** Your own colours, or null for the Sprout theme (which follows light/dark and `accent`). */
+  colors: ColorSet | null;
+  /** Paper pattern behind your notes. */
+  notePaper: PaperStyle;
 }
 
 export interface DailyStats {

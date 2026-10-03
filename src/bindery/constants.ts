@@ -57,15 +57,26 @@ export const FREE_LIBRARIES = [
   },
 ];
 
-/** Stylesheet bundled inside every EPUB we make. */
-export const BOOK_CSS = [
-  'body{font-family:serif;line-height:1.5;margin:0 5%}',
-  'h1{font-family:sans-serif;color:#2f7d55;text-align:center;margin:1.5em 0 1em}',
-  'h2,h3,h4,h5{font-family:sans-serif;color:#2f7d55}',
-  'p{margin:0 0 .8em;text-indent:0}',
-  '.cover{margin:0;padding:0;text-align:center}',
-  '.cover img{max-width:100%;height:auto}',
-].join('');
+/** Page colours for the inside of the book. Colours are hex so they work in every e-reader. */
+export const PAGE_COLORS = {
+  white: { label: 'White', paper: '#ffffff', text: '#1f2a24', lines: '#c9d6ce', heading: '#2f7d55' },
+  cream: { label: 'Cream', paper: '#fbf5e6', text: '#2e2a22', lines: '#e2d6b8', heading: '#7a5c2e' },
+  mint: { label: 'Mint', paper: '#eef8f0', text: '#1f3a2a', lines: '#bfe0c9', heading: '#2f7d55' },
+  blush: { label: 'Blush', paper: '#fdf0f3', text: '#3a2a2f', lines: '#f0c9d3', heading: '#b4546e' },
+  sky: { label: 'Sky', paper: '#eef5fc', text: '#1f2c3a', lines: '#c4d8ee', heading: '#2f6497' },
+  lilac: { label: 'Lilac', paper: '#f4f0fb', text: '#2c2540', lines: '#d8cdef', heading: '#6a4fa3' },
+  night: { label: 'Night', paper: '#1b1f24', text: '#e4e8ec', lines: '#3a424c', heading: '#8fd3a8' },
+} satisfies Record<string, { label: string; paper: string; text: string; lines: string; heading: string }>;
+export type PageColorName = keyof typeof PAGE_COLORS;
+
+/** Generic font families only: e-readers swap in their own fonts for these. */
+export const BOOK_FONTS = {
+  serif: { label: 'Classic', family: 'Georgia, serif' },
+  sans: { label: 'Clean', family: 'Helvetica, Arial, sans-serif' },
+  handwritten: { label: 'Handwritten', family: '"Comic Sans MS", "Segoe Print", cursive' },
+  typewriter: { label: 'Typewriter', family: '"Courier New", monospace' },
+} satisfies Record<string, { label: string; family: string }>;
+export type BookFontName = keyof typeof BOOK_FONTS;
 
 export const MAX_TITLE_LENGTH = 120;
 export const WORDS_PER_MINUTE = 230;

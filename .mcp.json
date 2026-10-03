@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "cmd",
+      "args": ["/c", "npx", "--no-install", "playwright-mcp", "--browser", "msedge", "--isolated"]
+    },
+    "sprout-studio": {
+      "command": "node",
+      "args": ["mcp/server.mjs"]
+    }
+  }
+}

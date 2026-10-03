@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { Button } from '../../shared/components/Button';
 import { Panel } from '../../shared/components/Panel';
 import { cx } from '../../shared/lib/classNames';
+import { paperBackground, type PaperStyle } from '../../shared/lib/paper';
 import { useNotes, type NotesStore } from '../hooks/useNotes';
 import { backlinks, cleanNoteName, findNote, renderNote, searchNotes } from '../lib/notes';
 import { loadOpenNote, markWelcomed, saveOpenNote, wasWelcomed } from '../lib/storage';
@@ -186,8 +187,17 @@ interface NoteEditorProps {
   onFollowLink: (name: string) => void;
 }
 
+/** The chosen paper behind a note, spaced to the text's line height so lined paper lines up. */
+function paperStyle(paper: PaperStyle, lineHeight: string): CSSProperties {
+  const { image, size } = paperBackground(paper, 'var(--line)', lineHeight);
+  if (image === 'none') return {};
+  // Starts where the text starts (inside the padding) and scrolls with it.
+  return { backgroundImage: image, backgroundSize: size, backgroundOrigin: 'content-box', backgroundAttachment: 'local' };
+}
+
 function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEditorProps) {
-  const { notify } = useStudy();
+  const { data, notify } = useStudy();
+  const paper = data.settings.notePaper;
   const [title, setTitle] = useState(note.name);
   const linkedFrom = backlinks(store.notes, note.name);
   const html = useMemo(
@@ -269,6 +279,7 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
       {mode === 'edit' ? (
         <textarea
           className="note-body"
+          style={paperStyle(paper, '1.65em')}
           autoFocus={!note.body}
           placeholder={'Write in Markdown…\n\n# Heading\n- a list item\n**bold**, *italic*, [[Another note]]'}
           value={note.body}
@@ -277,6 +288,7 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
       ) : (
         <div
           className="note-preview"
+          style={paperStyle(paper, '1.55em')}
           onClick={handlePreviewClick}
           // Sanitised by DOMPurify in renderNote.
           dangerouslySetInnerHTML={{ __html: html || '<p class="muted">This note is empty.</p>' }}

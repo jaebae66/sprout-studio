@@ -20,6 +20,9 @@ npm run typecheck  # TypeScript only
 npm run build      # type-check, then build into dist/
 npm run desktop          # build, then open it as a desktop app (Electron)
 npm run package:desktop  # build, then package it into release/Sprout Studio-win32-x64/
+npm test                 # build, then run every Playwright test (see Testing)
+npm run test:packaged    # package, then run the app tests against the packaged .exe
+npm run mcp              # start the Sprout Studio MCP server on stdio
 ```
 
 `npm run build` writes the app as **one self-contained HTML file**, `dist/index.html`, with all scripts and styles inlined. It opens straight from disk. No server needed.
@@ -30,11 +33,32 @@ npm run package:desktop  # build, then package it into release/Sprout Studio-win
 
 After changing the code, run `npm run package:desktop` again to update the app.
 
+## Testing
+
+Everything is tested with [Playwright](https://playwright.dev/) (`playwright.config.ts`), in three groups:
+
+- `tests/unit/`: note links, paper and page styles, colours, and the SQLite database.
+- `tests/mcp/`: the Sprout Studio MCP server, through a real MCP client.
+- `tests/app/`: the desktop app itself, driven through Playwright's Electron support. Startup and safety, notes, graph, every study tab, the book maker (it opens the EPUB it makes and checks inside), colours and paper, saved data and backups, and the MCP server changing things while the app is open.
+
+Each app test starts the app with its own throwaway data folder and vault (`tests/support/sprout.ts`, using the `SPROUT_USER_DATA` environment variable), so tests never touch your real notes or database. Results and failure traces go to `test-results/`; `npm run test:report` opens the HTML report.
+
+## MCP servers
+
+`.mcp.json` sets up two [MCP](https://modelcontextprotocol.io/) servers for Claude Code in this folder:
+
+- **sprout-studio** (`mcp/server.mjs`): lets Claude read and change your study space. Notes: `list_notes`, `read_note` (with links both ways), `search_notes`, `create_note`, `append_to_note`, `replace_note`. Study data: `get_overview`, `list_tasks`, `add_task`, `complete_task`, `list_flashcards`, `add_flashcard`, `list_subjects`, `add_subject`, `update_subject`. It uses the same vault and database as the app, and shares its note-name safety rules (`electron/vault-files.cjs`). The app checks the database every second for outside changes and reloads, so changes show up while it's open. There's no delete tool on purpose.
+- **playwright** ([@playwright/mcp](https://github.com/microsoft/playwright-mcp)): lets Claude drive a browser (Microsoft Edge, in a fresh profile each time). `file://` pages are blocked, so run `npm run dev` and point it at `http://localhost:5173`.
+
+Claude Code asks before using project MCP servers the first time; `/mcp` shows their status.
+
 ## Layout
 
 ```
 index.html       the page
-electron/        desktop app: main.cjs (window + vault files), preload.cjs
+electron/        desktop app: main.cjs (window), preload.cjs, database.cjs (SQLite), vault-files.cjs (notes)
+mcp/             server.mjs, the Sprout Studio MCP server
+tests/           Playwright tests: unit/, mcp/, app/, support/ (the app fixture)
 scripts/         package-desktop.mjs
 src/
   shared/        used across the app

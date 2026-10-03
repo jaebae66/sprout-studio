@@ -1,4 +1,4 @@
-import type { Flashcard, IconPack, Settings, TabId } from './types';
+import type { ColorSet, Flashcard, IconPack, Settings, TabId } from './types';
 
 export const STORAGE_KEY = 'sprout-study-v1';
 
@@ -78,6 +78,62 @@ export const DEFAULT_SETTINGS: Settings = {
   photo: null,
   focus: 25,
   brk: 5,
+  colors: null,
+  notePaper: 'plain',
 };
+
+/** The Sprout theme's own colours (src/shared/styles/theme.css), used as a starting point for your own. */
+export const SPROUT_COLORS: Record<'light' | 'dark', Omit<ColorSet, 'accent'>> = {
+  light: { background: '#eef7ef', card: '#ffffff', text: '#1f3a2a', faded: '#5c7a66', border: '#cfe5d4' },
+  dark: { background: '#13211a', card: '#1a2c22', text: '#e3f4e8', faded: '#9dbfa8', border: '#2e4a3a' },
+};
+
+/** Ready-made colour themes. Each one is fixed light or dark. */
+export const COLOR_THEMES: readonly { id: string; label: string; colors: ColorSet }[] = [
+  {
+    id: 'lavender',
+    label: 'Lavender',
+    colors: { accent: '#8a6fd1', background: '#f3effb', card: '#ffffff', text: '#2c2540', faded: '#6e6488', border: '#ddd3f0' },
+  },
+  {
+    id: 'peach',
+    label: 'Peach',
+    colors: { accent: '#e07b52', background: '#fdf1ea', card: '#fffaf6', text: '#3a2a22', faded: '#8a6d60', border: '#f2d6c6' },
+  },
+  {
+    id: 'strawberry',
+    label: 'Strawberry',
+    colors: { accent: '#d9577a', background: '#fdf0f3', card: '#ffffff', text: '#3a2a2f', faded: '#8d6570', border: '#f3cfd8' },
+  },
+  {
+    id: 'ocean',
+    label: 'Ocean',
+    colors: { accent: '#2f86c9', background: '#ecf4fb', card: '#ffffff', text: '#1f2c3a', faded: '#5b7186', border: '#cfe0ef' },
+  },
+  {
+    id: 'paper',
+    label: 'Paper',
+    colors: { accent: '#4a4a4a', background: '#f4f2ee', card: '#ffffff', text: '#1d1d1d', faded: '#6b6b6b', border: '#dedad2' },
+  },
+  {
+    id: 'midnight',
+    label: 'Midnight',
+    colors: { accent: '#8fa8ff', background: '#141826', card: '#1d2336', text: '#e6e9f5', faded: '#a3abc9', border: '#2e3653' },
+  },
+  {
+    id: 'coffee',
+    label: 'Coffee',
+    colors: { accent: '#d9a36a', background: '#1f1813', card: '#2a211a', text: '#f1e6da', faded: '#bba58f', border: '#45372b' },
+  },
+];
+
+export const COLOR_FIELDS: readonly { key: keyof ColorSet; label: string }[] = [
+  { key: 'accent', label: 'Accent' },
+  { key: 'background', label: 'Background' },
+  { key: 'card', label: 'Cards' },
+  { key: 'text', label: 'Text' },
+  { key: 'faded', label: 'Faded text' },
+  { key: 'border', label: 'Borders' },
+];
 
 export const MAX_TIMER_MINUTES = 120;

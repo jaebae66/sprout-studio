@@ -1,4 +1,5 @@
-import type { CoverColorName, CoverPattern, LanguageCode, StickerName } from './constants';
+import type { PaperStyle } from '../shared/lib/paper';
+import type { BookFontName, CoverColorName, CoverPattern, LanguageCode, PageColorName, StickerName } from './constants';
 
 export interface BookDetails {
   title: string;
@@ -13,6 +14,13 @@ export interface CoverSettings {
   sticker: StickerName;
   /** Object URL of an uploaded picture, or '' to use the generated cover. */
   imageUrl: string;
+}
+
+/** How the pages inside the book look. */
+export interface PageSettings {
+  paper: PaperStyle;
+  color: PageColorName;
+  font: BookFontName;
 }
 
 export interface ChapterContent {

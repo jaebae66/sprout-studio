@@ -111,6 +111,11 @@ const store: Store = database ? databaseStore(database) : browserStore;
 
 /* ---------- Study data ---------- */
 
+/** Calls `listener` when the saved data changes outside the app. A no-op in the browser. */
+export function onOutsideChange(listener: () => void): () => void {
+  return database ? database.onChange(listener) : () => {};
+}
+
 export function loadData(): StudyData {
   const data = withDefaults(store.loadData() ?? {});
   // Daily counters start again each day.

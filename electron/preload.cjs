@@ -22,4 +22,9 @@ contextBridge.exposeInMainWorld('sproutDb', {
   save: (data) => ipcRenderer.sendSync('db:save', data),
   getPreference: (key) => ipcRenderer.sendSync('db:get-preference', key),
   setPreference: (key, value) => ipcRenderer.sendSync('db:set-preference', key, value),
+  onChange(listener) {
+    const forward = () => listener();
+    ipcRenderer.on('db:changed', forward);
+    return () => ipcRenderer.removeListener('db:changed', forward);
+  },
 });

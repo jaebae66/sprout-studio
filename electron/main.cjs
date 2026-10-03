@@ -6,6 +6,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { openDatabase } = require('./database.cjs');
+const { listNotes, noteFile: vaultNoteFile, writeNote } = require('./vault-files.cjs');
+
+// Tests (and anyone wanting a separate profile) can point the app at another data folder.
+if (process.env.SPROUT_USER_DATA) app.setPath('userData', path.resolve(process.env.SPROUT_USER_DATA));
 
 const PAGE = path.join(__dirname, '..', 'dist', 'index.html');
 const PAGE_URL = pathToFileURL(PAGE).href;
@@ -13,8 +17,8 @@ const ICON = path.join(__dirname, '..', 'icons', 'sprout-study.ico');
 const CONFIG = path.join(app.getPath('userData'), 'config.json');
 const DATABASE = path.join(app.getPath('userData'), 'sprout-studio.db');
 
-/** Same rule as cleanNoteName in src/study/lib/notes.ts: nothing that could leave the vault folder. */
-const UNSAFE_NAME = /[\\/:*?"<>|#^[\]\n\r\t\0]/;
+/** How often to check whether something else (like the MCP server) changed the database. */
+const DATABASE_CHECK_MS = 1000;
 
 let mainWindow = null;
 let vaultFolder = '';
@@ -22,6 +26,8 @@ let watcher = null;
 let database = null;
 /** When the app last wrote each file, so its own saves aren't reported back as outside changes. */
 const ownWrites = new Map();
+/** Notes on their way to the Recycle Bin (which takes a moment), so they aren't listed again meanwhile. */
+const removing = new Set();
 
 function readConfig() {
   try {
@@ -37,12 +43,7 @@ function writeConfig(config) {
 }
 
 function noteFile(name) {
-  if (typeof name !== 'string' || !name.trim() || name.length > 120 || UNSAFE_NAME.test(name) || /^\.|\.$/.test(name)) {
-    throw new Error(`Not a valid note name: ${name}`);
-  }
-  const file = path.join(vaultFolder, `${name}.md`);
-  if (path.dirname(file) !== path.resolve(vaultFolder)) throw new Error(`Not a valid note name: ${name}`);
-  return file;
+  return vaultNoteFile(vaultFolder, name);
 }
 
 function markWritten(file) {
@@ -98,20 +99,11 @@ handleSync('db:set-preference', false, (key, value) => {
 
 handle('vault:folder', () => vaultFolder);
 
-handle('vault:list', () =>
-  fs
-    .readdirSync(vaultFolder, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
-    .map((entry) => {
-      const file = path.join(vaultFolder, entry.name);
-      return { name: entry.name.slice(0, -3), body: fs.readFileSync(file, 'utf8'), updated: fs.statSync(file).mtimeMs };
-    }),
-);
+handle('vault:list', () => listNotes(vaultFolder).filter((note) => !removing.has(note.name.toLowerCase())));
 
 handle('vault:write', (name, body) => {
-  const file = noteFile(name);
-  markWritten(file);
-  fs.writeFileSync(file, String(body), 'utf8');
+  markWritten(noteFile(name));
+  writeNote(vaultFolder, name, body);
 });
 
 handle('vault:rename', (from, to) => {
@@ -127,7 +119,12 @@ handle('vault:rename', (from, to) => {
 handle('vault:remove', async (name) => {
   const file = noteFile(name);
   markWritten(file);
-  await shell.trashItem(file);
+  removing.add(name.toLowerCase());
+  try {
+    await shell.trashItem(file);
+  } finally {
+    removing.delete(name.toLowerCase());
+  }
 });
 
 handle('vault:choose', async () => {
@@ -185,8 +182,20 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     database = openDatabase(DATABASE);
-    openVault(readConfig().vault ?? path.join(app.getPath('documents'), 'Sprout Vault'));
+    const config = readConfig();
+    openVault(config.vault ?? path.join(app.getPath('documents'), 'Sprout Vault'));
+    // Written down so tools outside the app (the MCP server) can find the vault.
+    if (config.vault !== vaultFolder) writeConfig({ ...config, vault: vaultFolder });
     createWindow();
+
+    // Changes from anywhere else (the MCP server, another tool) make the page reload its data.
+    let lastVersion = database.dataVersion();
+    setInterval(() => {
+      const version = database.dataVersion();
+      if (version === lastVersion) return;
+      lastVersion = version;
+      mainWindow?.webContents.send('db:changed');
+    }, DATABASE_CHECK_MS);
   });
 
   app.on('window-all-closed', () => app.quit());

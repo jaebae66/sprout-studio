@@ -275,3 +275,28 @@
   color: var(--muted);
   font-size: 0.88rem;
 }
+
+/* ---------- Page preview ---------- */
+
+.bindery .page-preview {
+  flex: none;
+  width: 180px;
+  height: 240px;
+  padding: 14px 14px 0;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 6px 14px 14px 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  font-size: 0.78rem;
+}
+
+.bindery .page-preview h4 {
+  /* Same size and spacing as the text, so it stays on the lines of lined paper. */
+  margin: 0;
+  font-size: 1em;
+  text-align: center;
+}
+
+.bindery .page-preview p {
+  margin: 0;
+}

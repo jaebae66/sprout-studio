@@ -33,7 +33,7 @@ export function App() {
   const { message, notify } = useToast(2200);
   const [view, setView] = useState<TabId>(startingTab);
   const { settings } = data;
-  const wallInk = useTheme(settings.theme, settings.accent);
+  const wallInk = useTheme(settings.theme, settings.accent, settings.colors);
 
   useEffect(() => {
     saveOpenTab(view);

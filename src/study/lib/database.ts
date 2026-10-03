@@ -12,6 +12,8 @@ export interface DatabaseBridge {
   save(data: StudyData): boolean;
   getPreference(key: string): string | null;
   setPreference(key: string, value: string): boolean;
+  /** Called when something outside the app (like the MCP server) changes the database. Returns an unsubscribe function. */
+  onChange(listener: () => void): () => void;
 }
 
 declare global {

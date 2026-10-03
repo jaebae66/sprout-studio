@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ColorDots, type ColorDotOption } from '../../../shared/components/ColorDots';
 import { Panel } from '../../../shared/components/Panel';
-import { ACCENTS, MAX_TIMER_MINUTES, type AccentName } from '../../constants';
+import { MAX_TIMER_MINUTES } from '../../constants';
 import { useStudy } from '../../StudyContext';
-import type { ThemePreference } from '../../types';
-
-const ACCENT_OPTIONS: ColorDotOption<AccentName>[] = (Object.keys(ACCENTS) as AccentName[]).map((name) => ({
-  value: name,
-  fill: ACCENTS[name].light,
-}));
 
 export function ProfileSettings() {
   const { data, update, updateSettings, icon } = useStudy();
@@ -19,7 +12,7 @@ export function ProfileSettings() {
   const setCourse = (course: string) => update((current) => ({ ...current, course }));
 
   return (
-    <Panel className="stack" title={`${icon('custom')} Make it yours`}>
+    <Panel className="stack" title={`${icon('mascot')} Make it yours`}>
       <div>
         <label className="lbl" htmlFor="c-name">
           Your name
@@ -47,24 +40,6 @@ export function ProfileSettings() {
           onChange={(event) => setCourse(event.target.value)}
           onBlur={(event) => setCourse(event.target.value.trim())}
         />
-      </div>
-      <div>
-        <span className="lbl">Colour</span>
-        <ColorDots options={ACCENT_OPTIONS} selected={settings.accent} onSelect={(accent) => updateSettings({ accent })} />
-      </div>
-      <div>
-        <label className="lbl" htmlFor="c-theme">
-          Light or dark
-        </label>
-        <select
-          id="c-theme"
-          value={settings.theme}
-          onChange={(event) => updateSettings({ theme: event.target.value as ThemePreference })}
-        >
-          <option value="system">Match my device</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
       </div>
       <div className="row">
         <MinutesSetting

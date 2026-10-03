@@ -155,9 +155,13 @@ function openDatabase(file) {
     }
   }
 
+  const versionQuery = db.prepare('PRAGMA data_version');
+
   return {
     load,
     save,
+    /** Changes whenever another connection (not this one) commits a write. */
+    dataVersion: () => versionQuery.get().data_version,
     getPreference: (key) => query.getPreference.get(text(key))?.value ?? null,
     setPreference: (key, value) => query.setPreference.run(text(key), text(value)),
     close: () => db.close(),

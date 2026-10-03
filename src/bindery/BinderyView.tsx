@@ -6,15 +6,17 @@ import { ChaptersPanel } from './components/ChaptersPanel';
 import { CoverDesigner } from './components/CoverDesigner';
 import { EpubConverter } from './components/EpubConverter';
 import { FreeBookShelf } from './components/FreeBookShelf';
+import { PageDesigner } from './components/PageDesigner';
 import { useChapters } from './hooks/useChapters';
 import { readChapterFiles } from './lib/chapterFiles';
 import { canvasToJpeg } from './lib/cover';
 import { buildEpub, EpubLockedError, epubToText, readEpub, sectionsToChapters } from './lib/epub';
 import { splitTextIntoChapters } from './lib/text';
-import type { BookDetails, ConversionState, CoverSettings, OpenedEpub, TextFormat } from './types';
+import type { BookDetails, ConversionState, CoverSettings, OpenedEpub, PageSettings, TextFormat } from './types';
 
 const INITIAL_BOOK: BookDetails = { title: 'Untitled Book', author: '', language: 'en', description: '' };
 const INITIAL_COVER: CoverSettings = { color: 'mint', pattern: 'leaves', sticker: 'sprout', imageUrl: '' };
+const INITIAL_PAGE: PageSettings = { paper: 'plain', color: 'white', font: 'serif' };
 
 const addedMessage = (count: number) => `Added ${count} chapter${count === 1 ? '' : 's'} 🍃`;
 
@@ -26,6 +28,7 @@ interface BinderyViewProps {
 export function BinderyView({ notify }: BinderyViewProps) {
   const [book, setBook] = useState(INITIAL_BOOK);
   const [cover, setCover] = useState(INITIAL_COVER);
+  const [page, setPage] = useState(INITIAL_PAGE);
   const [conversion, setConversion] = useState<ConversionState | null>(null);
   const chapters = useChapters();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -81,7 +84,7 @@ export function BinderyView({ notify }: BinderyViewProps) {
     try {
       await document.fonts.ready;
       const coverJpeg = await canvasToJpeg(canvas);
-      const epub = await buildEpub({ book, chapters: chapters.items, coverJpeg });
+      const epub = await buildEpub({ book, chapters: chapters.items, coverJpeg, page });
       const filename = `${toSafeFilename(book.title.trim() || 'Untitled', 'book')}.epub`;
       downloadBlob(filename, epub);
       notify(`Saved ${filename} 🌸`);
@@ -140,6 +143,8 @@ export function BinderyView({ notify }: BinderyViewProps) {
             onChange={updateCover}
             onImageChange={handleCoverImage}
           />
+          <h3>Pages</h3>
+          <PageDesigner page={page} title={book.title} onChange={(patch) => setPage((current) => ({ ...current, ...patch }))} />
         </Panel>
         <ChaptersPanel
           chapters={chapters.items}
