@@ -1,7 +1,9 @@
 {
   "name": "sprout-studio",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "Notes, study tools and a book maker in one cosy app.",
+  "author": "puppygirl",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -14,37 +16,87 @@
     "test": "npm run build && playwright test --project=unit --project=mcp --project=app",
     "test:packaged": "npm run package:desktop && playwright test --project=packaged",
     "test:report": "playwright show-report",
-    "mcp": "node mcp/server.mjs"
+    "mcp": "node mcp/server.mjs",
+    "dist": "npm run build && electron-builder --win"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.13",
+    "@electron/packager": "^20.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/mali": "^5.3.0",
+    "@fontsource/nunito": "^5.3.0",
     "@lezer/highlight": "^1.2.5",
     "@modelcontextprotocol/sdk": "^1.32.0",
-    "dompurify": "^3.4.16",
-    "jszip": "^3.10.1",
-    "marked": "^18.0.14",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "zod": "^4.6.5"
-  },
-  "devDependencies": {
-    "@electron/packager": "^20.3.0",
     "@playwright/mcp": "^0.0.83",
     "@playwright/test": "^1.63.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "dompurify": "^3.4.16",
     "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "jszip": "^3.10.1",
+    "marked": "^18.0.14",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
-    "vite-plugin-singlefile": "^2.0.3"
+    "vite-plugin-singlefile": "^2.0.3",
+    "zod": "^4.6.5"
   },
   "allowScripts": {
     "electron@44.5.1": true,
     "esbuild@0.21.5": true
+  },
+  "build": {
+    "appId": "studio.sprout.app",
+    "productName": "Sprout Studio",
+    "copyright": "Made with love by puppygirl",
+    "directories": {
+      "output": "release/installers"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "icons/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "icons/sprout-study.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Sprout Studio",
+      "installerIcon": "icons/sprout-study.ico",
+      "uninstallerIcon": "icons/sprout-study.ico",
+      "artifactName": "Sprout Studio Setup ${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Sprout Studio ${version} Portable.${ext}"
+    }
   }
 }

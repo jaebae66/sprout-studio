@@ -33,9 +33,9 @@ test.describe('with linked notes', () => {
   test('draws the notes and holds perfectly still', async ({ sprout }) => {
     const { page } = sprout;
     await sprout.openTab('Graph');
-    await expect(page.getByText('4 notes')).toBeVisible();
+    await expect(page.locator('.graph-info')).toContainText('4 notes');
     const canvas = page.locator('.note-graph');
-    await expect(canvas).toHaveAttribute('aria-label', 'Graph of 4 notes and the links between them');
+    await expect(canvas).toHaveAttribute('aria-label', /^Graph of 4 notes and 0 classes, with \d+ connections$/);
     await page.waitForTimeout(300);
     const first = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
     await page.waitForTimeout(1000);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, createElement, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { findNote, nameKey, retargetLinks, uniqueNoteName } from '../lib/notes';
 import { vault, type VaultBridge } from '../lib/vault';
 import { useStudy } from '../StudyContext';
@@ -160,4 +160,20 @@ function useVaultNotes(bridge: VaultBridge): NotesStore {
 }
 
 /** The user's notes: in the vault folder in the desktop app, otherwise in the browser. */
-export const useNotes: () => NotesStore = vault ? useVaultNotes.bind(null, vault) : useBrowserNotes;
+const useNotesStore: () => NotesStore = vault ? useVaultNotes.bind(null, vault) : useBrowserNotes;
+
+const NotesContext = createContext<NotesStore | null>(null);
+
+/**
+ * One shared copy of the notes for the whole app, so every tab (and the study guides,
+ * which update in the background) sees the same notes.
+ */
+export function NotesProvider({ children }: { children: ReactNode }) {
+  return createElement(NotesContext.Provider, { value: useNotesStore() }, children);
+}
+
+export function useNotes(): NotesStore {
+  const store = useContext(NotesContext);
+  if (!store) throw new Error('useNotes must be used inside <NotesProvider>');
+  return store;
+}

@@ -1,7 +1,10 @@
+import { useMemo, useState } from 'react';
 import { Button } from '../../shared/components/Button';
 import { Panel } from '../../shared/components/Panel';
 import { NoteGraph } from '../components/NoteGraph';
 import { useNotes } from '../hooks/useNotes';
+import { useStudyGuides } from '../hooks/useStudyGuides';
+import { buildGraphData, type GraphNodeData, type GraphOptions } from '../lib/graphData';
 import { cleanNoteName, findNote } from '../lib/notes';
 import { loadOpenNote, saveOpenNote } from '../lib/storage';
 import { useStudy } from '../StudyContext';
@@ -11,14 +14,26 @@ interface GraphViewProps {
   onOpenNote: () => void;
 }
 
+const CONNECTIONS: { key: keyof GraphOptions; label: string; hint: string }[] = [
+  { key: 'links', label: 'Links', hint: '[[links]] you wrote' },
+  { key: 'related', label: 'Shared keywords', hint: 'notes about the same things' },
+  { key: 'subjects', label: 'Classes', hint: 'notes that mention a class code' },
+];
+
 export function GraphView({ onOpenNote }: GraphViewProps) {
   const store = useNotes();
+  const guides = useStudyGuides();
+  const { data, icon } = useStudy();
   const { notes } = store;
-  const { icon } = useStudy();
+  const [options, setOptions] = useState<GraphOptions>({ links: true, related: true, subjects: true });
+  const [hovered, setHovered] = useState<GraphNodeData | null>(null);
+  const graph = useMemo(() => buildGraphData(notes, data.units, options), [notes, data.units, options]);
 
-  /** Opens a note by name, creating it first if it was only linked to. */
-  function open(name: string) {
-    saveOpenNote(findNote(notes, name)?.name ?? store.create(cleanNoteName(name)));
+  /** Opens a note, a class's study guide (making it if needed), or a note that was only linked to. */
+  function open(node: GraphNodeData) {
+    const subject = node.subjectId ? data.units.find((unit) => unit.id === node.subjectId) : undefined;
+    if (subject) saveOpenNote(guides.ensure(subject));
+    else saveOpenNote(findNote(notes, node.open)?.name ?? store.create(cleanNoteName(node.open)));
     onOpenNote();
   }
 
@@ -27,25 +42,41 @@ export function GraphView({ onOpenNote }: GraphViewProps) {
     onOpenNote();
   }
 
+  const noteCount = graph.nodes.filter((node) => node.kind === 'note').length;
+
   return (
     <Panel
       className="graph-panel stack tight"
       title={`${icon('graph')} Graph`}
-      aside={<span className="muted small-text">{notes.length} notes</span>}
+      aside={
+        <div className="graph-toggles" role="group" aria-label="Connections to show">
+          {CONNECTIONS.map(({ key, label, hint }) => (
+            <label key={key} className={`graph-toggle toggle-${key}`} title={hint}>
+              <input
+                type="checkbox"
+                checked={options[key]}
+                onChange={(event) => setOptions((current) => ({ ...current, [key]: event.target.checked }))}
+              />
+              <i aria-hidden="true" />
+              {label}
+            </label>
+          ))}
+        </div>
+      }
     >
-      {notes.length ? (
+      {notes.length || data.units.length ? (
         <>
-          <NoteGraph notes={notes} active={loadOpenNote()} onOpen={open} />
-          <p className="muted small-text">
-            Each dot is a note and each line a [[link]]. Click a dot to open it · drag to move · scroll to zoom
+          <NoteGraph data={graph} active={loadOpenNote()} onOpen={open} onHover={setHovered} />
+          <p className="muted small-text graph-info" aria-live="polite">
+            {hovered ? describe(hovered) : `${noteCount} notes · click a dot to open it · drag to move · scroll to zoom`}
           </p>
         </>
       ) : (
         <div className="empty stack">
           <p>{store.ready ? 'No notes yet, so the graph is empty.' : 'Opening your vault…'}</p>
           <p className="small-text">
-            Write notes in the Notes tab and link them with [[double brackets]]. Each note becomes a dot here, and
-            each link a line between them.
+            Write notes in the Notes tab. Notes about the same things join up by themselves, [[links]] join them on
+            purpose, and classes from the Subjects tab gather the notes that mention their code.
           </p>
           {store.ready && (
             <div className="row center">
@@ -56,4 +87,10 @@ export function GraphView({ onOpenNote }: GraphViewProps) {
       )}
     </Panel>
   );
+}
+
+function describe(node: GraphNodeData): string {
+  if (node.kind === 'subject') return `${node.label}${node.keywords[0] ? ` – ${node.keywords[0]}` : ''} · click to open its study guide`;
+  if (node.kind === 'missing') return `${node.label} · linked to but not written yet: click to start it`;
+  return `${node.label}${node.keywords.length ? ` · topics: ${node.keywords.join(', ')}` : ''}`;
 }

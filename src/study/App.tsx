@@ -5,9 +5,11 @@ import { useToast } from '../shared/hooks/useToast';
 import { Ribbon } from './components/Ribbon';
 import { DEFAULT_TAB, ICON_PACKS, TABS } from './constants';
 import { useFlashcardSession } from './hooks/useFlashcardSession';
+import { NotesProvider } from './hooks/useNotes';
 import { usePomodoro } from './hooks/usePomodoro';
 import { useQuiz } from './hooks/useQuiz';
 import { useStudyData } from './hooks/useStudyData';
+import { StudyGuideKeeper } from './hooks/useStudyGuides';
 import { useTheme } from './hooks/useTheme';
 import { loadOpenTab, saveOpenTab } from './lib/storage';
 import { wallpaperBackground } from './lib/wallpaper';
@@ -78,7 +80,7 @@ export function App() {
   // The book maker is kept open in the background (below) so a half-made book survives switching tabs.
   const views: Record<Exclude<TabId, 'bindery'>, ReactNode> = {
     home: <HomeView timer={timer} onOpenPlanner={() => setView('planner')} />,
-    units: <SubjectsView />,
+    units: <SubjectsView onOpenNote={() => setView('notes')} />,
     cards: <FlashcardsView session={flashcards} />,
     quiz: <QuizView quiz={quiz} />,
     planner: <PlannerView />,
@@ -90,17 +92,20 @@ export function App() {
 
   return (
     <StudyProvider value={context}>
-      <div className="wallpaper" style={{ background: wallpaperBackground(settings.wall, wallInk, settings.photo) }} />
-      <div className="shell">
-        <Ribbon active={view} onSelect={setView} />
-        <main className={`pane pane-${view}`}>
-          {view !== 'bindery' && views[view]}
-          <div hidden={view !== 'bindery'}>
-            <BinderyView notify={notify} />
-          </div>
-        </main>
-      </div>
-      <Toast message={message} />
+      <NotesProvider>
+        <StudyGuideKeeper />
+        <div className="wallpaper" style={{ background: wallpaperBackground(settings.wall, wallInk, settings.photo) }} />
+        <div className="shell">
+          <Ribbon active={view} onSelect={setView} />
+          <main className={`pane pane-${view}`}>
+            {view !== 'bindery' && views[view]}
+            <div hidden={view !== 'bindery'}>
+              <BinderyView notify={notify} />
+            </div>
+          </main>
+        </div>
+        <Toast message={message} />
+      </NotesProvider>
     </StudyProvider>
   );
 }

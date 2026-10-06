@@ -1,62 +1,58 @@
 import { useEffect, useRef } from 'react';
-import { linkedNames, nameKey } from '../lib/notes';
-import type { Note } from '../types';
+import type { EdgeKind, GraphData, GraphNodeData, NodeKind } from '../lib/graphData';
+import { nameKey } from '../lib/notes';
 
 interface NoteGraphProps {
-  notes: readonly Note[];
+  data: GraphData;
   /** The open note, drawn highlighted. */
   active: string | null;
-  onOpen: (name: string) => void;
+  onOpen: (node: GraphNodeData) => void;
+  /** Called with the node under the pointer (or null), for showing its details. */
+  onHover?: (node: GraphNodeData | null) => void;
 }
 
 interface GraphNode {
   key: string;
   label: string;
+  kind: NodeKind;
+  data: GraphNodeData;
   x: number;
   y: number;
   vx: number;
   vy: number;
   radius: number;
-  /** Linked to but not written yet. */
-  missing: boolean;
 }
 
 interface Edge {
   from: GraphNode;
   to: GraphNode;
+  kind: EdgeKind;
 }
 
 /** Positions survive re-renders, so editing a note doesn't reshuffle the map. */
 const positions = new Map<string, { x: number; y: number }>();
 
-function buildGraph(notes: readonly Note[]) {
-  const nodes = new Map<string, GraphNode>();
-  const addNode = (label: string, missing: boolean) => {
-    const key = nameKey(label);
-    const existing = nodes.get(key);
-    if (existing) return existing;
-    const saved = positions.get(key) ?? { x: (Math.random() - 0.5) * 300, y: (Math.random() - 0.5) * 300 };
-    const node = { key, label, ...saved, vx: 0, vy: 0, radius: 5, missing };
-    nodes.set(key, node);
-    return node;
-  };
+/** How far apart each kind of connection likes its dots: classes gather their notes close. */
+const EDGE_LENGTH: Record<EdgeKind, number> = { link: 70, related: 95, subject: 80 };
 
-  notes.forEach((note) => addNode(note.name, false));
+function buildGraph({ nodes: nodeData, edges: edgeData }: GraphData) {
+  const nodes = new Map<string, GraphNode>();
+  for (const data of nodeData) {
+    const saved = positions.get(data.key) ?? { x: (Math.random() - 0.5) * 300, y: (Math.random() - 0.5) * 300 };
+    nodes.set(data.key, { key: data.key, label: data.label, kind: data.kind, data, ...saved, vx: 0, vy: 0, radius: data.kind === 'subject' ? 13 : 5 });
+  }
   const edges: Edge[] = [];
-  for (const note of notes) {
-    const from = nodes.get(nameKey(note.name))!;
-    for (const target of linkedNames(note.body)) {
-      if (target === from.key) continue;
-      const to = nodes.get(target) ?? addNode(target, true);
-      edges.push({ from, to });
-    }
+  for (const { from, to, kind } of edgeData) {
+    const a = nodes.get(from);
+    const b = nodes.get(to);
+    if (a && b) edges.push({ from: a, to: b, kind });
   }
   // Busier notes get bigger dots.
   for (const { from, to } of edges) {
-    from.radius += 0.8;
-    to.radius += 0.8;
+    if (from.kind !== 'subject') from.radius += 0.7;
+    if (to.kind !== 'subject') to.radius += 0.7;
   }
-  nodes.forEach((node) => (node.radius = Math.min(node.radius, 16)));
+  nodes.forEach((node) => (node.radius = Math.min(node.radius, node.kind === 'subject' ? 18 : 14)));
   return { nodes: [...nodes.values()], edges };
 }
 
@@ -91,11 +87,12 @@ function tick(nodes: GraphNode[], edges: Edge[], held: GraphNode | null, alpha: 
       b.vy += dy * push;
     }
   }
-  for (const { from, to } of edges) {
+  for (const { from, to, kind } of edges) {
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const distance = Math.hypot(dx, dy) || 1;
-    const pull = ((distance - 70) / distance) * 0.06 * alpha;
+    // Keyword relations pull a little more gently than links you wrote yourself.
+    const pull = ((distance - EDGE_LENGTH[kind]) / distance) * (kind === 'related' ? 0.035 : 0.06) * alpha;
     from.vx += dx * pull;
     from.vy += dy * pull;
     to.vx -= dx * pull;
@@ -114,19 +111,25 @@ function cssVar(element: Element, name: string): string {
   return getComputedStyle(element).getPropertyValue(name).trim();
 }
 
-/** Every note as a dot, with lines for [[links]]. Drag dots, drag the background to pan, scroll to zoom, click to open. */
-export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
+/**
+ * Every note as a dot and every class as a big ringed dot. Solid lines are [[links]],
+ * dashed lines are notes that share keywords, and faint lines join a class to its notes.
+ * Drag dots, drag the background to pan, scroll to zoom, click to open.
+ */
+export function NoteGraph({ data, active, onOpen, onHover }: NoteGraphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Kept in refs so the drawing loop always sees the latest without restarting.
   const activeRef = useRef(active);
   const openRef = useRef(onOpen);
+  const hoverRef = useRef(onHover);
   activeRef.current = active;
   openRef.current = onOpen;
+  hoverRef.current = onHover;
 
   useEffect(() => {
     const canvas = canvasRef.current!;
     const context = canvas.getContext('2d')!;
-    const { nodes, edges } = buildGraph(notes);
+    const { nodes, edges } = buildGraph(data);
     const view = { x: 0, y: 0, zoom: 1 };
     let hovered: GraphNode | null = null;
     let held: GraphNode | null = null;
@@ -174,6 +177,7 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
         fg: cssVar(canvas, '--fg'),
         muted: cssVar(canvas, '--muted'),
         line: cssVar(canvas, '--line'),
+        soft: cssVar(canvas, '--soft'),
       };
       const focus = hovered ?? nodes.find((node) => node.key === nameKey(activeRef.current ?? '')) ?? null;
       const close = focus ? (neighbours.get(focus) ?? new Set()) : null;
@@ -183,31 +187,43 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
       context.translate(width / 2 + view.x, height / 2 + view.y);
       context.scale(view.zoom, view.zoom);
 
-      context.lineWidth = 1.2 / view.zoom;
-      for (const { from, to } of edges) {
+      for (const { from, to, kind } of edges) {
         const lit = focus && (from === focus || to === focus);
-        context.strokeStyle = lit ? colours.accent : colours.line;
-        context.globalAlpha = !focus || lit ? 1 : 0.4;
+        context.lineWidth = (kind === 'link' ? 1.4 : 1.1) / view.zoom;
+        context.setLineDash(kind === 'related' ? [5 / view.zoom, 4 / view.zoom] : []);
+        context.strokeStyle = lit ? colours.accent : kind === 'related' ? colours.muted : colours.line;
+        context.globalAlpha = (!focus || lit ? 1 : 0.35) * (kind === 'subject' && !lit ? 0.7 : kind === 'related' && !lit ? 0.6 : 1);
         context.beginPath();
         context.moveTo(from.x, from.y);
         context.lineTo(to.x, to.y);
         context.stroke();
       }
+      context.setLineDash([]);
 
-      context.font = `600 ${12 / view.zoom}px Nunito, system-ui, sans-serif`;
       context.textAlign = 'center';
       context.textBaseline = 'top';
       for (const node of nodes) {
         const lit = node === focus || close?.has(node);
         context.globalAlpha = !focus || lit ? 1 : 0.35;
-        context.fillStyle = node === focus ? colours.accent : node.missing ? colours.line : colours.muted;
-        context.beginPath();
         // At least 5px across on screen, however far out you zoom.
-        context.arc(node.x, node.y, Math.max(node.radius, 5 / view.zoom), 0, Math.PI * 2);
-        context.fill();
-        if (lit || view.zoom > 0.75 || nodes.length < 30) {
-          context.fillStyle = node.missing ? colours.muted : colours.fg;
-          context.fillText(node.label, node.x, node.y + Math.max(node.radius, 5 / view.zoom) + 3 / view.zoom);
+        const radius = Math.max(node.radius, 5 / view.zoom);
+        context.beginPath();
+        context.arc(node.x, node.y, radius, 0, Math.PI * 2);
+        if (node.kind === 'subject') {
+          // A class: a soft disc with a ring, like a sticker.
+          context.fillStyle = colours.soft;
+          context.fill();
+          context.lineWidth = 3 / view.zoom;
+          context.strokeStyle = colours.accent;
+          context.stroke();
+        } else {
+          context.fillStyle = node === focus ? colours.accent : node.kind === 'missing' ? colours.line : colours.muted;
+          context.fill();
+        }
+        if (lit || node.kind === 'subject' || view.zoom > 0.75 || nodes.length < 30) {
+          context.font = `${node.kind === 'subject' ? 800 : 600} ${(node.kind === 'subject' ? 13 : 12) / view.zoom}px Nunito, system-ui, sans-serif`;
+          context.fillStyle = node.kind === 'missing' ? colours.muted : node.kind === 'subject' ? colours.accent : colours.fg;
+          context.fillText(node.label, node.x, node.y + radius + 3 / view.zoom);
         }
       }
       context.restore();
@@ -272,13 +288,15 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
         view.y = event.clientY - panning.y;
         dragged = true;
       } else {
-        hovered = nodeAt(event);
+        const over = nodeAt(event);
+        if (over !== hovered) hoverRef.current?.(over?.data ?? null);
+        hovered = over;
         canvas.style.cursor = hovered ? 'pointer' : 'grab';
       }
     }
 
     function handleUp() {
-      if (held && !dragged) openRef.current(held.label);
+      if (held && !dragged) openRef.current(held.data);
       held = null;
       panning = null;
     }
@@ -305,7 +323,14 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
     canvas.addEventListener('pointerdown', handleDown, { signal });
     canvas.addEventListener('pointermove', handleMove, { signal });
     canvas.addEventListener('pointerup', handleUp, { signal });
-    canvas.addEventListener('pointerleave', () => (hovered = null), { signal });
+    canvas.addEventListener(
+      'pointerleave',
+      () => {
+        hovered = null;
+        hoverRef.current?.(null);
+      },
+      { signal },
+    );
     canvas.addEventListener('wheel', handleWheel, { passive: false, signal });
     frame = requestAnimationFrame(loop);
 
@@ -315,14 +340,19 @@ export function NoteGraph({ notes, active, onOpen }: NoteGraphProps) {
       listening.abort();
       nodes.forEach((node) => positions.set(node.key, { x: node.x, y: node.y }));
     };
-  }, [notes]);
+  }, [data]);
 
+  const notes = data.nodes.filter((node) => node.kind === 'note').length;
+  const classes = data.nodes.filter((node) => node.kind === 'subject').length;
   return (
     <canvas
       ref={canvasRef}
       className="note-graph"
       role="img"
-      aria-label={`Graph of ${notes.length} notes and the links between them`}
+      aria-label={`Graph of ${notes} notes and ${classes} classes, with ${data.edges.length} connections`}
+      data-links={data.edges.filter((edge) => edge.kind === 'link').length}
+      data-related={data.edges.filter((edge) => edge.kind === 'related').length}
+      data-subject-links={data.edges.filter((edge) => edge.kind === 'subject').length}
     />
   );
 }

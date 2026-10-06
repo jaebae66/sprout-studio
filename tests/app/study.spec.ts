@@ -41,8 +41,8 @@ test('Planner: a task needs a name', async ({ sprout }) => {
 test('Subjects: add one, move its progress, change its status', async ({ sprout }) => {
   const { page } = sprout;
   await sprout.openTab('Subjects');
-  await page.getByPlaceholder('Optional code').fill('bio101');
-  await page.getByPlaceholder('Subject or topic').fill('Cells');
+  await page.getByPlaceholder('Class code, e.g. BIO101').fill('bio101');
+  await page.getByPlaceholder('Class or topic name').fill('Cells');
   await page.getByRole('button', { name: 'Add subject' }).click();
   const card = page.locator('.unit', { hasText: 'Cells' });
   await expect(card.locator('.code')).toHaveText('BIO101');

@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 export { expect } from '@playwright/test';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const PACKAGED_EXE = path.join(ROOT, 'release', 'Sprout Studio-win32-x64', 'Sprout Studio.exe');
+/** The packaged app to test: SPROUT_EXE if set (e.g. the installer build's win-unpacked), else npm run package:desktop's. */
+const PACKAGED_EXE = process.env.SPROUT_EXE ?? path.join(ROOT, 'release', 'Sprout Studio-win32-x64', 'Sprout Studio.exe');
 
 interface SproutOptions {
   /** Notes to put in the vault before the app starts: { name: markdown }. */

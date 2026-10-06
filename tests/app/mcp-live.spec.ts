@@ -45,7 +45,7 @@ test.describe('the MCP server and the open app together', () => {
     await sprout.openTab('Notes');
     await expect(page.locator('.note-list')).toContainText('Water');
     await sprout.openTab('Graph');
-    await expect(page.getByText('2 notes')).toBeVisible();
+    await expect(page.locator('.graph-info')).toContainText('2 notes');
   });
 
   test('the MCP server finds the vault the app recorded', async ({ sprout }) => {

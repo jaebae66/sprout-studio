@@ -1494,3 +1494,47 @@ mark.hl-orange,
 .sticky textarea::placeholder {
   color: rgba(0, 0, 0, 0.35);
 }
+
+/* ---------- Graph switches ---------- */
+
+.graph-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.graph-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.graph-toggle input {
+  accent-color: var(--accent);
+}
+
+/* A sample of each kind of line, as a legend. */
+.graph-toggle i {
+  width: 22px;
+  height: 0;
+  border-top: 2px solid var(--line);
+}
+
+.toggle-related i {
+  border-top: 2px dashed var(--muted);
+}
+
+.toggle-subjects i {
+  width: 12px;
+  height: 12px;
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  background: var(--soft);
+}
+
+.graph-info {
+  min-height: 1.5em;
+}

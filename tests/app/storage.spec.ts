@@ -41,7 +41,7 @@ test("an older version's localStorage data moves into the database", async ({ sp
 test('backups save to a file and restore', async ({ sprout }) => {
   const { page } = sprout;
   await sprout.openTab('Subjects');
-  await page.getByPlaceholder('Subject or topic').fill('Chemistry');
+  await page.getByPlaceholder('Class or topic name').fill('Chemistry');
   await page.getByRole('button', { name: 'Add subject' }).click();
 
   await sprout.openTab('Customise');

@@ -3,6 +3,7 @@
 One app, laid out like Obsidian: an icon ribbon on the left and one view at a time. It opens on Notes (or wherever you left off).
 
 - **Notes** and **Graph**: Markdown notes with `[[links]]`, backlinks, search, and a graph of how they connect. A toolbar adds formatting, six highlighter colours, checklists you can tick while reading, stationery cards (tip, key idea, question…), washi-tape dividers, stickers and page templates (Cornell notes, lecture notes, revision summary…).
+- **Study guides**: add a class with its code in Subjects (say `BIO101`) and it gets a "BIO101 Study Guide" note, gathered from every note that mentions the code (or `#BIO101`): its notes, main topics, key terms, key ideas, questions, planner tasks and probably-related notes. It keeps itself up to date; anything you write below its automatic part is kept. "Make flashcards" turns key terms written as `==Term==: meaning` into flashcards.
 - **Stickies**: a corkboard of coloured sticky notes to drag around, tidy up, or turn into full notes.
 - **Today, Planner, Subjects, Flashcards, Quiz**: study timer, tasks, progress tracking and revision.
 - **Book maker** (Sprout Bindery): turns text, Markdown or HTML files into an EPUB, and EPUBs back into text.
@@ -21,6 +22,7 @@ npm run typecheck  # TypeScript only
 npm run build      # type-check, then build into dist/
 npm run desktop          # build, then open it as a desktop app (Electron)
 npm run package:desktop  # build, then package it into release/Sprout Studio-win32-x64/
+npm run dist             # build the installer and portable .exe to share (see Sharing the app)
 npm test                 # build, then run every Playwright test (see Testing)
 npm run test:packaged    # package, then run the app tests against the packaged .exe
 npm run mcp              # start the Sprout Studio MCP server on stdio
@@ -33,6 +35,17 @@ npm run mcp              # start the Sprout Studio MCP server on stdio
 `electron/main.cjs` opens `dist/index.html` in its own window. In the desktop app, notes are plain `<name>.md` files in a vault folder (`Documents\Sprout Vault` unless you pick another under Notes → Change…), so other Markdown editors can open them too, and edits made elsewhere show up straight away. `electron/preload.cjs` gives the page only the vault functions listed in `src/study/lib/vault.ts`. Any notes from the browser version, or from a restored backup, move into the vault automatically.
 
 After changing the code, run `npm run package:desktop` again to update the app.
+
+## Sharing the app
+
+`npm run dist` builds two files into `release/installers/` with [electron-builder](https://www.electron.build/) (settings under `"build"` in `package.json`):
+
+- **Sprout Studio Setup 1.1.0.exe**: an installer. No administrator rights needed; installs for the current user, lets them choose a folder, adds Desktop and Start menu shortcuts, and can be removed from Windows' "Installed apps".
+- **Sprout Studio 1.1.0 Portable.exe**: runs straight away without installing (it starts a little slower, as it unpacks itself each time).
+
+Each person gets their own empty Sprout Studio: their notes go in their own `Documents\Sprout Vault`, and their data in their own `%APPDATA%\sprout-studio`. Fonts are bundled, so it looks right offline.
+
+The files aren't code-signed (that needs a paid certificate), so Windows SmartScreen shows "Windows protected your PC" the first time. Click **More info**, then **Run anyway**. Bump `version` in `package.json` before building a new release so the installer upgrades older installs cleanly.
 
 ## Note-taking extras
 
@@ -47,6 +60,8 @@ Everything the toolbar adds is plain Markdown that Obsidian reads too:
 | Link to a note | `[[Note name]]` | Ctrl+K |
 | Card | `> [!tip] Title` (an Obsidian callout) | |
 | Washi tape divider | `---` | |
+
+The graph joins notes three ways, each of which can be switched off: `[[links]]` (solid lines), notes that share keywords (dashed lines, `src/study/lib/keywords.ts`: TF-IDF over each note's words, with highlighted, bold, heading and title words counting extra), and classes gathering the notes that mention their code (`src/study/lib/graphData.ts`). Study guides are built in `src/study/lib/studyGuide.ts` and kept fresh by `StudyGuideKeeper` (`src/study/hooks/useStudyGuides.ts`). None of it needs AI or the internet.
 
 The helpers that make these edits are in `src/study/lib/formatting.ts`, the stationery (colours, cards, stickers, templates) in `src/study/lib/stationery.ts`, and the reading view turns callouts into cards in `renderNote` (`src/study/lib/notes.ts`). Sticky notes are saved in the database's `sticky_notes` table (added in database version 2; older databases upgrade themselves).
 
