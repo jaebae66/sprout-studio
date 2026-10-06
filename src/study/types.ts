@@ -1,4 +1,5 @@
 import type { PaperStyle } from '../shared/lib/paper';
+import type { StickyColor } from './lib/stationery';
 import type { AccentName, IconPackName, WallpaperId } from './constants';
 
 /*
@@ -87,6 +88,16 @@ export interface Note {
   updated: number;
 }
 
+/** A sticky note on the Stickies board. */
+export interface Sticky {
+  id: string;
+  text: string;
+  color: StickyColor;
+  /** Position on the board, in pixels from its top-left corner. */
+  x: number;
+  y: number;
+}
+
 export interface StudyData {
   name: string;
   course: string;
@@ -96,11 +107,12 @@ export interface StudyData {
   tasks: Task[];
   /** Notes kept in the browser. The desktop app moves these into its vault folder. */
   pages: Note[];
+  stickies: Sticky[];
   stats: DailyStats;
   quizBest: number;
 }
 
-export type TabId = 'home' | 'units' | 'cards' | 'quiz' | 'planner' | 'notes' | 'graph' | 'bindery' | 'custom';
+export type TabId = 'home' | 'units' | 'cards' | 'quiz' | 'planner' | 'notes' | 'graph' | 'stickies' | 'bindery' | 'custom';
 
 export type IconKey = TabId | 'mascot' | 'done' | 'timer';
 

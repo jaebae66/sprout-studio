@@ -56,6 +56,7 @@ test('offers the expected tools, marked read-only where they only read', async (
   expect(names).toEqual(
     [
       'add_flashcard',
+      'add_sticky_note',
       'add_subject',
       'add_task',
       'append_to_note',
@@ -64,6 +65,7 @@ test('offers the expected tools, marked read-only where they only read', async (
       'get_overview',
       'list_flashcards',
       'list_notes',
+      'list_sticky_notes',
       'list_subjects',
       'list_tasks',
       'read_note',
@@ -154,6 +156,16 @@ test.describe('study data', () => {
     const updated = (await mcp.call('update_subject', { subject: 'bio101', progress: 40, status: 'In progress' })).value.updated;
     expect(updated).toEqual({ name: 'Cells', status: 'In progress', progress: 40 });
     expect((await mcp.call('update_subject', { subject: 'Cells', progress: 140 })).isError).toBe(true);
+  });
+
+  test('pins sticky notes to the board', async ({ mcp }) => {
+    await mcp.call('add_sticky_note', { text: 'Revise chapter 3', color: 'pink' });
+    await mcp.call('add_sticky_note', { text: 'Buy highlighters' });
+    expect((await mcp.call('list_sticky_notes')).value).toEqual([
+      { id: expect.any(String), text: 'Revise chapter 3', color: 'pink' },
+      { id: expect.any(String), text: 'Buy highlighters', color: 'yellow' },
+    ]);
+    expect((await mcp.call('add_sticky_note', { text: 'x', color: 'tartan' })).isError).toBe(true);
   });
 
   test('the overview pulls everything together', async ({ mcp }) => {

@@ -54,7 +54,7 @@ test('typing saves straight to the .md file', async ({ sprout }) => {
   const { page } = sprout;
   await openNote(page, 'Water');
   await page.getByRole('button', { name: /Edit/ }).click();
-  await page.locator('.note-body').fill('Rain falls on [[Soil]].');
+  await page.locator('.note-body .cm-content').fill('Rain falls on [[Soil]].');
   await expect.poll(() => sprout.readNote('Water')).toBe('Rain falls on [[Soil]].');
 });
 
@@ -62,7 +62,7 @@ test('clicking a link to a missing note creates it', async ({ sprout }) => {
   const { page } = sprout;
   await openNote(page, 'Water');
   await page.getByRole('button', { name: /Edit/ }).click();
-  await page.locator('.note-body').fill('Rain falls on [[Soil]].');
+  await page.locator('.note-body .cm-content').fill('Rain falls on [[Soil]].');
   await page.getByRole('button', { name: /Read/ }).click();
   await expect(page.locator('a.wikilink.missing')).toHaveText('Soil');
   await page.locator('a.wikilink', { hasText: 'Soil' }).click();

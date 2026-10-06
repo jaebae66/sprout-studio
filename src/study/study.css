@@ -724,12 +724,99 @@ input[type="range"] {
   color: var(--panel-solid);
 }
 
+/* The writing area: a CodeMirror editor with live preview. */
 .note-body {
   height: 100%;
-  resize: none;
-  font-family: var(--mono);
-  font-size: 0.92rem;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-solid);
+}
+
+.note-body:focus-within {
+  border-color: var(--accent);
+}
+
+.note-body .cm-editor {
+  height: 100%;
+  color: var(--fg);
+}
+
+.note-body .cm-editor.cm-focused {
+  outline: none;
+}
+
+.note-body .cm-scroller {
+  font-family: var(--body);
+  font-size: 0.98rem;
   line-height: 1.65;
+}
+
+.note-body .cm-content {
+  min-height: 100%;
+  padding: 8px 12px;
+  caret-color: var(--fg);
+}
+
+.note-body .cm-line {
+  padding: 0;
+}
+
+.note-body .cm-cursor {
+  border-left: 2px solid var(--accent);
+}
+
+.note-body .cm-selectionBackground,
+.note-body .cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.note-body .cm-placeholder {
+  color: var(--muted);
+}
+
+/* Live preview: formatting shows while writing, and its codes hide (src/study/lib/livePreview.ts). */
+.cm-strong {
+  font-weight: 800;
+}
+
+.cm-em {
+  font-style: italic;
+}
+
+.cm-strike {
+  text-decoration: line-through;
+}
+
+.cm-code {
+  padding: 0 3px;
+  border-radius: 5px;
+  background: var(--soft);
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+.cm-heading {
+  font-family: var(--display);
+  font-weight: 700;
+}
+
+.cm-h1 {
+  font-size: 1.6em;
+}
+
+.cm-h2 {
+  font-size: 1.35em;
+}
+
+.cm-h3 {
+  font-size: 1.15em;
+}
+
+.cm-wikilink {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .note-preview {
@@ -798,9 +885,16 @@ input[type="range"] {
   border: 1px solid var(--line);
 }
 
+/* Dividers are a strip of washi tape. */
 .note-preview hr {
+  height: 14px;
+  margin: 1.2em 8%;
   border: 0;
-  border-top: 2px dashed var(--line);
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(45deg, transparent 0 6px, rgba(255, 255, 255, 0.35) 6px 12px),
+    color-mix(in srgb, var(--accent) 45%, transparent);
+  transform: rotate(-0.6deg);
 }
 
 .backlinks {
@@ -966,4 +1060,437 @@ input[type="range"] {
 
 .segmented {
   flex-wrap: wrap;
+}
+
+/* ---------- Note toolbar ---------- */
+
+.note-writing {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-height: 0;
+}
+
+.note-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tool-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-solid);
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tool:hover,
+.tool[aria-expanded="true"] {
+  background: var(--soft);
+}
+
+.tool.mono {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.tool .caret {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+/* The highlighter shows its ink colour underneath. */
+.tool.pen {
+  box-shadow: inset 0 -5px 0 var(--pen);
+}
+
+.tool-menu {
+  position: relative;
+}
+
+.tool-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+  padding: 8px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-solid);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.menu-item {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: var(--soft);
+}
+
+.pen-colours {
+  display: flex;
+  gap: 6px;
+}
+
+.pen-colour {
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--panel-solid);
+  border-radius: 6px 12px 6px 12px;
+  box-shadow: 0 0 0 2px var(--line);
+  cursor: pointer;
+}
+
+.pen-colour[aria-checked="true"] {
+  box-shadow: 0 0 0 3px var(--fg);
+}
+
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+}
+
+.sticker {
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.sticker:hover {
+  background: var(--soft);
+  transform: scale(1.15) rotate(-6deg);
+}
+
+/* ---------- Highlighters ---------- */
+
+mark,
+.cm-hl {
+  padding: 0 0.15em;
+  border-radius: 0.3em 0.15em 0.35em 0.2em;
+  background: color-mix(in srgb, #ffe066 75%, transparent);
+  /* Dark ink on the highlight, like a real highlighter, so it reads on dark pages too. */
+  color: #2b2b2b;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+mark.hl-pink,
+.cm-hl-pink {
+  background: color-mix(in srgb, #ffadd2 75%, transparent);
+}
+
+mark.hl-green,
+.cm-hl-green {
+  background: color-mix(in srgb, #a8e6a1 75%, transparent);
+}
+
+mark.hl-blue,
+.cm-hl-blue {
+  background: color-mix(in srgb, #a5d8ff 75%, transparent);
+}
+
+mark.hl-purple,
+.cm-hl-purple {
+  background: color-mix(in srgb, #d0bfff 75%, transparent);
+}
+
+mark.hl-orange,
+.cm-hl-orange {
+  background: color-mix(in srgb, #ffc078 75%, transparent);
+}
+
+/* ---------- Cards (callouts) ---------- */
+
+.callout {
+  --card: #fff6c9;
+  --tape: #f7c948;
+  position: relative;
+  margin: 1.4em 0 1em;
+  padding: 16px 16px 12px;
+  border-radius: 4px 4px 14px 14px;
+  background: var(--card);
+  color: #2b2b2b;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* A strip of washi tape holding the card down. */
+.callout::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 84px;
+  height: 18px;
+  background:
+    repeating-linear-gradient(45deg, transparent 0 5px, rgba(255, 255, 255, 0.4) 5px 10px),
+    var(--tape);
+  opacity: 0.85;
+  transform: translateX(-50%) rotate(-2deg);
+}
+
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-family: var(--display);
+  font-weight: 700;
+}
+
+.callout-body > :first-child {
+  margin-top: 0;
+}
+
+.callout-body > * + * {
+  margin-top: 0.5em;
+}
+
+.callout a {
+  color: #2f6f4a;
+}
+
+.callout-note {
+  background-image: linear-gradient(to bottom, transparent 94%, rgba(0, 0, 0, 0.07) 94%);
+  background-size: 100% 1.55em;
+}
+
+.callout-tip {
+  --card: #dcf5e3;
+  --tape: #7fd19b;
+}
+
+.callout-important {
+  --card: #ffe0ec;
+  --tape: #f58bb3;
+}
+
+.callout-question {
+  --card: #dcecff;
+  --tape: #7db5f2;
+}
+
+.callout-warning {
+  --card: #ffe6cf;
+  --tape: #f7a65b;
+}
+
+.callout-todo {
+  --card: #ece3ff;
+  --tape: #b39cf0;
+}
+
+.callout-summary {
+  --card: #e4f6d3;
+  --tape: #9bd36c;
+}
+
+.callout-quote {
+  --card: #f7f1e6;
+  --tape: #d6bf96;
+  font-style: italic;
+}
+
+/* The Cards menu shows a little sample of each (:where keeps the type colours winning). */
+:where(.card-sample) {
+  --card: #fff6c9;
+  --tape: #f7c948;
+}
+
+.card-sample {
+  border-left: 6px solid var(--tape);
+  background: var(--card);
+  color: #2b2b2b;
+}
+
+.card-sample:hover {
+  background: var(--card);
+  filter: brightness(0.96);
+}
+
+/* ---------- Checklists ---------- */
+
+.note-preview li.task {
+  list-style: none;
+  margin-left: -1.3em;
+}
+
+.note-preview li.task input {
+  width: 1.05em;
+  height: 1.05em;
+  margin: 0 0.45em 0 0;
+  vertical-align: -0.12em;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.note-preview li.task.done {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* ---------- Sticky notes ---------- */
+
+.pane-stickies {
+  align-content: stretch;
+}
+
+.stickies-panel {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.sticky-adders {
+  display: flex;
+  gap: 5px;
+}
+
+.sticky-adder {
+  width: 30px;
+  height: 30px;
+  border: 2px solid;
+  border-radius: 4px 4px 10px 4px;
+  color: rgba(0, 0, 0, 0.55);
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.sticky-adder:hover {
+  transform: rotate(-6deg) scale(1.1);
+}
+
+/* The corkboard. */
+.sticky-board {
+  position: relative;
+  min-height: 420px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.06) 1px, transparent 1.5px) 0 0 / 14px 14px,
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.1) 1px, transparent 1.5px) 0 0 / 18px 18px,
+    color-mix(in srgb, #c9a173 55%, var(--panel-solid));
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.sticky-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  color: #4a3a28;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sticky {
+  position: absolute;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-radius: 2px 2px 4px 18px;
+  background: var(--paper);
+  color: #2e2a24;
+  box-shadow: 2px 6px 12px rgba(0, 0, 0, 0.22);
+  transform: rotate(var(--tilt));
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.sticky.lifted {
+  box-shadow: 6px 16px 26px rgba(0, 0, 0, 0.3);
+  transform: scale(1.04);
+  transition: none;
+}
+
+.sticky-strip {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  min-height: 26px;
+  padding: 3px 4px;
+  background: var(--edge);
+  cursor: grab;
+  touch-action: none;
+}
+
+.sticky.lifted .sticky-strip {
+  cursor: grabbing;
+}
+
+.sticky-action {
+  padding: 1px 5px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.8rem;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.sticky:hover .sticky-action,
+.sticky:focus-within .sticky-action {
+  opacity: 1;
+}
+
+.sticky-action:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.sticky-action:disabled {
+  opacity: 0.25 !important;
+  cursor: default;
+}
+
+.sticky textarea {
+  width: 100%;
+  height: 100%;
+  padding: 8px 12px 12px;
+  border: 0;
+  border-radius: 0 0 4px 18px;
+  background: transparent;
+  color: inherit;
+  font-family: var(--display);
+  font-size: 1rem;
+  line-height: 1.45;
+  resize: none;
+}
+
+.sticky textarea:focus {
+  outline: none;
+}
+
+.sticky textarea::placeholder {
+  color: rgba(0, 0, 0, 0.35);
 }

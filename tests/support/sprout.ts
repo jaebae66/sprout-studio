@@ -45,7 +45,21 @@ function killTree(pid: number | undefined) {
   }
 }
 
+/**
+ * Starts the app. On rare occasions (about 1 launch in 100) Windows closes the very
+ * first window before the page has loaded; one more try handles that. A crash on
+ * the second try still fails the test.
+ */
 async function launch(userData: string, packaged: boolean) {
+  try {
+    return await launchOnce(userData, packaged);
+  } catch (error) {
+    if (!String(error).includes('has been closed')) throw error;
+    return launchOnce(userData, packaged);
+  }
+}
+
+async function launchOnce(userData: string, packaged: boolean) {
   const env = { ...process.env, SPROUT_USER_DATA: userData } as Record<string, string>;
   // Set by VS Code's terminal; it would make Electron behave like plain Node.
   delete env.ELECTRON_RUN_AS_NODE;

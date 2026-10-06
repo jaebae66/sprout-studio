@@ -3,11 +3,11 @@ import type { ColorSet, Flashcard, IconPack, Settings, TabId } from './types';
 export const STORAGE_KEY = 'sprout-study-v1';
 
 export const ICON_PACKS = {
-  sprout: { name: 'Sprout garden', mascot: '🌱', home: '🏡', units: '🌿', cards: '🍀', quiz: '🌼', planner: '🗓️', notes: '📝', graph: '🌳', bindery: '📗', custom: '🎨', done: '🌸', timer: '⏳' },
-  froggy: { name: 'Froggy pond', mascot: '🐸', home: '🪷', units: '🍄', cards: '🐛', quiz: '🦋', planner: '🐌', notes: '🌾', graph: '🕸️', bindery: '🪵', custom: '🎀', done: '⭐', timer: '🫧' },
-  kitty: { name: 'Kitty cafe', mascot: '🐱', home: '🧸', units: '🐾', cards: '🧶', quiz: '🐟', planner: '🍵', notes: '🍓', graph: '✨', bindery: '📚', custom: '🎀', done: '💚', timer: '☕' },
-  techy: { name: 'Cosy tech', mascot: '🤖', home: '🖥️', units: '💾', cards: '⌨️', quiz: '🖱️', planner: '📡', notes: '📎', graph: '🛰️', bindery: '💿', custom: '🔧', done: '✅', timer: '⏱️' },
-  bunny: { name: 'Bunny meadow', mascot: '🐰', home: '🌷', units: '🥕', cards: '🌙', quiz: '🍡', planner: '🧺', notes: '✉️', graph: '🌌', bindery: '📖', custom: '🌈', done: '💮', timer: '🕰️' },
+  sprout: { name: 'Sprout garden', mascot: '🌱', home: '🏡', units: '🌿', cards: '🍀', quiz: '🌼', planner: '🗓️', notes: '📝', graph: '🌳', stickies: '🗒️', bindery: '📗', custom: '🎨', done: '🌸', timer: '⏳' },
+  froggy: { name: 'Froggy pond', mascot: '🐸', home: '🪷', units: '🍄', cards: '🐛', quiz: '🦋', planner: '🐌', notes: '🌾', graph: '🕸️', stickies: '🍃', bindery: '🪵', custom: '🎀', done: '⭐', timer: '🫧' },
+  kitty: { name: 'Kitty cafe', mascot: '🐱', home: '🧸', units: '🐾', cards: '🧶', quiz: '🐟', planner: '🍵', notes: '🍓', graph: '✨', stickies: '💌', bindery: '📚', custom: '🎀', done: '💚', timer: '☕' },
+  techy: { name: 'Cosy tech', mascot: '🤖', home: '🖥️', units: '💾', cards: '⌨️', quiz: '🖱️', planner: '📡', notes: '📎', graph: '🛰️', stickies: '📌', bindery: '💿', custom: '🔧', done: '✅', timer: '⏱️' },
+  bunny: { name: 'Bunny meadow', mascot: '🐰', home: '🌷', units: '🥕', cards: '🌙', quiz: '🍡', planner: '🧺', notes: '✉️', graph: '🌌', stickies: '🎀', bindery: '📖', custom: '🌈', done: '💮', timer: '🕰️' },
 } satisfies Record<string, IconPack>;
 export type IconPackName = keyof typeof ICON_PACKS;
 
@@ -40,6 +40,7 @@ export const WALL_INK = { light: '#bfe3c8', dark: '#24402f' };
 export const TABS: readonly { id: TabId; label: string }[] = [
   { id: 'notes', label: 'Notes' },
   { id: 'graph', label: 'Graph' },
+  { id: 'stickies', label: 'Stickies' },
   { id: 'home', label: 'Today' },
   { id: 'planner', label: 'Planner' },
   { id: 'units', label: 'Subjects' },

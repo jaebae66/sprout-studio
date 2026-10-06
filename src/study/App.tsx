@@ -20,6 +20,7 @@ import { HomeView } from './views/HomeView';
 import { NotesView } from './views/NotesView';
 import { PlannerView } from './views/PlannerView';
 import { QuizView } from './views/QuizView';
+import { StickiesView } from './views/StickiesView';
 import { SubjectsView } from './views/SubjectsView';
 
 /** The tab named in the URL (#planner etc.), else the one open last time, else Notes. */
@@ -83,6 +84,7 @@ export function App() {
     planner: <PlannerView />,
     notes: <NotesView />,
     graph: <GraphView onOpenNote={() => setView('notes')} />,
+    stickies: <StickiesView />,
     custom: <CustomiseView />,
   };
 

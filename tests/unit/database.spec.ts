@@ -17,6 +17,10 @@ const sample = () => ({
   cards: [{ id: 'c0', q: "It's", a: 'quote "test"', known: true }],
   tasks: [{ id: 't1', title: 'Read ch 1', unit: 'BIO101', due: '2026-10-05', done: false }],
   pages: [{ name: 'Old', body: 'old notes', updated: 123.5 }],
+  stickies: [
+    { id: 's1', text: 'Buy pens', color: 'pink', x: 22, y: 22 },
+    { id: 's2', text: '', color: 'mint', x: 234, y: 40 },
+  ],
   stats: { day: '2026-10-02', mins: 30, sessions: 1, total: 400 },
 });
 
@@ -71,6 +75,25 @@ test.describe('SQLite database', () => {
     expect(db.getPreference('openTab')).toBe('graph');
     expect(db.getPreference('nothing')).toBeNull();
     db.close();
+  });
+
+  test('upgrades a version 1 database (before sticky notes) without losing anything', () => {
+    let db = openDatabase(file);
+    db.save({ ...sample(), stickies: [] });
+    db.close();
+    // Turn it back into a version 1 file.
+    const raw = new DatabaseSync(file);
+    raw.exec('DROP TABLE sticky_notes; PRAGMA user_version = 1;');
+    raw.close();
+
+    db = openDatabase(file);
+    expect(db.load()).toEqual({ ...sample(), stickies: [] });
+    db.save(sample());
+    expect(db.load().stickies).toEqual(sample().stickies);
+    db.close();
+    const check = new DatabaseSync(file, { readOnly: true });
+    expect(check.prepare('PRAGMA user_version').get()).toEqual({ user_version: 2 });
+    check.close();
   });
 
   test('notices writes from another connection (how the app spots MCP changes)', () => {

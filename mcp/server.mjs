@@ -50,6 +50,7 @@ function emptyData() {
     cards: [],
     tasks: [],
     pages: [],
+    stickies: [],
     stats: { day: '', mins: 0, sessions: 0, total: 0 },
   };
 }
@@ -336,6 +337,36 @@ server.registerTool(
       const card = { id: newId('c'), q: term.trim(), a: meaning.trim(), known: false };
       data.cards.push(card);
       return { added: { id: card.id, term: card.q, meaning: card.a } };
+    }),
+  ),
+);
+
+/* Sticky notes */
+
+/** Colours offered on the Stickies board (src/study/lib/stationery.ts). */
+const STICKY_COLORS = ['yellow', 'pink', 'mint', 'blue', 'lilac', 'peach'];
+
+server.registerTool(
+  'list_sticky_notes',
+  { title: 'List sticky notes', description: 'The sticky notes on the Stickies board.', annotations: reading },
+  safely(() => readData().stickies.map(({ id, text, color }) => ({ id, text, color }))),
+);
+
+server.registerTool(
+  'add_sticky_note',
+  {
+    title: 'Add a sticky note',
+    description: 'Pins a sticky note to the Stickies board: good for quick reminders.',
+    inputSchema: { text: z.string().min(1).max(500), color: z.enum(STICKY_COLORS).default('yellow') },
+    annotations: writing,
+  },
+  safely(({ text, color }) =>
+    changeData((data) => {
+      // The next spot in a four-across grid; "Tidy up" in the app re-flows them to fit.
+      const index = data.stickies.length;
+      const sticky = { id: newId('s'), text: text.trim(), color, x: 22 + (index % 4) * 212, y: 22 + Math.floor(index / 4) * 202 };
+      data.stickies.push(sticky);
+      return { added: { id: sticky.id, text: sticky.text, color } };
     }),
   ),
 );

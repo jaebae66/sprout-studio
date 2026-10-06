@@ -17,6 +17,12 @@
     "mcp": "node mcp/server.mjs"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
+    "@lezer/highlight": "^1.2.5",
     "@modelcontextprotocol/sdk": "^1.32.0",
     "dompurify": "^3.4.16",
     "jszip": "^3.10.1",

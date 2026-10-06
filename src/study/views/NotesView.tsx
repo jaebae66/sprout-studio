@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { Button } from '../../shared/components/Button';
 import { Panel } from '../../shared/components/Panel';
 import { cx } from '../../shared/lib/classNames';
 import { paperBackground, type PaperStyle } from '../../shared/lib/paper';
+import { NoteEditorBox, type TextEditor } from '../components/NoteEditorBox';
+import { formatShortcuts, NoteToolbar } from '../components/NoteToolbar';
 import { useNotes, type NotesStore } from '../hooks/useNotes';
+import { toggleTask } from '../lib/formatting';
 import { backlinks, cleanNoteName, findNote, renderNote, searchNotes } from '../lib/notes';
+import type { HighlighterId } from '../lib/stationery';
 import { loadOpenNote, markWelcomed, saveOpenNote, wasWelcomed } from '../lib/storage';
 import { useStudy } from '../StudyContext';
 import type { Note } from '../types';
@@ -199,6 +203,8 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
   const { data, notify } = useStudy();
   const paper = data.settings.notePaper;
   const [title, setTitle] = useState(note.name);
+  const [highlighter, setHighlighter] = useState<HighlighterId>('yellow');
+  const editor = useRef<TextEditor | null>(null);
   const linkedFrom = backlinks(store.notes, note.name);
   const html = useMemo(
     () => (mode === 'preview' ? renderNote(note.body, store.notes) : ''),
@@ -228,7 +234,13 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
   }
 
   function handlePreviewClick(event: MouseEvent<HTMLDivElement>) {
-    const link = (event.target as HTMLElement).closest('a');
+    const target = event.target as HTMLElement;
+    // Ticking a checklist box in reading view ticks it in the note itself.
+    if (target instanceof HTMLInputElement && target.dataset.task) {
+      store.save(note.name, toggleTask(note.body, Number(target.dataset.task)));
+      return;
+    }
+    const link = target.closest('a');
     if (!link) return;
     event.preventDefault();
     if (link.dataset.note) {
@@ -277,14 +289,18 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
       </div>
 
       {mode === 'edit' ? (
-        <textarea
-          className="note-body"
-          style={paperStyle(paper, '1.65em')}
-          autoFocus={!note.body}
-          placeholder={'Write in Markdown…\n\n# Heading\n- a list item\n**bold**, *italic*, [[Another note]]'}
-          value={note.body}
-          onChange={(event) => store.save(note.name, event.target.value)}
-        />
+        <div className="note-writing">
+          <NoteToolbar editor={editor} noteName={note.name} highlighter={highlighter} onHighlighter={setHighlighter} />
+          <NoteEditorBox
+            ref={editor}
+            value={note.body}
+            onChange={(body) => store.save(note.name, body)}
+            shortcuts={formatShortcuts(highlighter)}
+            paperStyle={paperStyle(paper, '1.65em')}
+            placeholderText="Start writing… the toolbar above has highlighters, cards, stickers and templates."
+            autoFocus={!note.body}
+          />
+        </div>
       ) : (
         <div
           className="note-preview"

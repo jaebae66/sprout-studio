@@ -2,7 +2,8 @@
 
 One app, laid out like Obsidian: an icon ribbon on the left and one view at a time. It opens on Notes (or wherever you left off).
 
-- **Notes** and **Graph**: Markdown notes with `[[links]]`, backlinks, search, and a graph of how they connect.
+- **Notes** and **Graph**: Markdown notes with `[[links]]`, backlinks, search, and a graph of how they connect. A toolbar adds formatting, six highlighter colours, checklists you can tick while reading, stationery cards (tip, key idea, question…), washi-tape dividers, stickers and page templates (Cornell notes, lecture notes, revision summary…).
+- **Stickies**: a corkboard of coloured sticky notes to drag around, tidy up, or turn into full notes.
 - **Today, Planner, Subjects, Flashcards, Quiz**: study timer, tasks, progress tracking and revision.
 - **Book maker** (Sprout Bindery): turns text, Markdown or HTML files into an EPUB, and EPUBs back into text.
 - **Customise**: wallpaper, icon pack, colours and backups.
@@ -33,6 +34,22 @@ npm run mcp              # start the Sprout Studio MCP server on stdio
 
 After changing the code, run `npm run package:desktop` again to update the app.
 
+## Note-taking extras
+
+Everything the toolbar adds is plain Markdown that Obsidian reads too:
+
+| | Written as | Shortcut |
+|---|---|---|
+| Highlight (yellow) | `==text==` | Ctrl+Shift+H |
+| Highlight (other colours) | `<mark class="hl-pink">text</mark>` | Ctrl+Shift+H uses the last colour |
+| Bold / italic / strikethrough | `**text**` / `*text*` / `~~text~~` | Ctrl+B / Ctrl+I / Ctrl+Shift+X |
+| Checklist | `- [ ] item` | Ctrl+Shift+L |
+| Link to a note | `[[Note name]]` | Ctrl+K |
+| Card | `> [!tip] Title` (an Obsidian callout) | |
+| Washi tape divider | `---` | |
+
+The helpers that make these edits are in `src/study/lib/formatting.ts`, the stationery (colours, cards, stickers, templates) in `src/study/lib/stationery.ts`, and the reading view turns callouts into cards in `renderNote` (`src/study/lib/notes.ts`). Sticky notes are saved in the database's `sticky_notes` table (added in database version 2; older databases upgrade themselves).
+
 ## Testing
 
 Everything is tested with [Playwright](https://playwright.dev/) (`playwright.config.ts`), in three groups:
@@ -47,7 +64,7 @@ Each app test starts the app with its own throwaway data folder and vault (`test
 
 `.mcp.json` sets up two [MCP](https://modelcontextprotocol.io/) servers for Claude Code in this folder:
 
-- **sprout-studio** (`mcp/server.mjs`): lets Claude read and change your study space. Notes: `list_notes`, `read_note` (with links both ways), `search_notes`, `create_note`, `append_to_note`, `replace_note`. Study data: `get_overview`, `list_tasks`, `add_task`, `complete_task`, `list_flashcards`, `add_flashcard`, `list_subjects`, `add_subject`, `update_subject`. It uses the same vault and database as the app, and shares its note-name safety rules (`electron/vault-files.cjs`). The app checks the database every second for outside changes and reloads, so changes show up while it's open. There's no delete tool on purpose.
+- **sprout-studio** (`mcp/server.mjs`): lets Claude read and change your study space. Notes: `list_notes`, `read_note` (with links both ways), `search_notes`, `create_note`, `append_to_note`, `replace_note`. Study data: `get_overview`, `list_tasks`, `add_task`, `complete_task`, `list_flashcards`, `add_flashcard`, `list_subjects`, `add_subject`, `update_subject`, `list_sticky_notes`, `add_sticky_note`. It uses the same vault and database as the app, and shares its note-name safety rules (`electron/vault-files.cjs`). The app checks the database every second for outside changes and reloads, so changes show up while it's open. There's no delete tool on purpose.
 - **playwright** ([@playwright/mcp](https://github.com/microsoft/playwright-mcp)): lets Claude drive a browser (Microsoft Edge, in a fresh profile each time). `file://` pages are blocked, so run `npm run dev` and point it at `http://localhost:5173`.
 
 Claude Code asks before using project MCP servers the first time; `/mcp` shows their status.
@@ -85,7 +102,7 @@ src/
 
 ## Saved data
 
-**Desktop app:** a SQLite database, `sprout-studio.db` in the app's data folder (`%APPDATA%\sprout-studio`), using Node's built-in `node:sqlite`. `electron/database.cjs` defines the tables: `profile`, `settings`, `subjects`, `flashcards`, `tasks`, `daily_stats` (focus minutes per day, kept as history), `pending_notes` and `preferences`. The page reaches it through `src/study/lib/database.ts`. The first time it runs, anything an older version left in `localStorage` moves into the database. Notes are not in the database: they're `.md` files in the vault.
+**Desktop app:** a SQLite database, `sprout-studio.db` in the app's data folder (`%APPDATA%\sprout-studio`), using Node's built-in `node:sqlite`. `electron/database.cjs` defines the tables: `profile`, `settings`, `subjects`, `flashcards`, `tasks`, `daily_stats` (focus minutes per day, kept as history), `sticky_notes`, `pending_notes` and `preferences`. The page reaches it through `src/study/lib/database.ts`. The first time it runs, anything an older version left in `localStorage` moves into the database. Notes are not in the database: they're `.md` files in the vault.
 
 **Browser:** `localStorage` under `sprout-study-v1`, with the same shape as before.
 

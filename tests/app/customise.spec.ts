@@ -60,7 +60,7 @@ test('note paper shows behind notes while writing and reading', async ({ sprout 
   await expect.poll(() => sprout.query("SELECT value FROM settings WHERE key = 'notePaper'")).toEqual([{ value: '"graph"' }]);
   await sprout.openTab('Notes');
   await page.getByRole('button', { name: /Edit/ }).click();
-  await expect(page.locator('.note-body')).toHaveCSS('background-image', /linear-gradient/);
+  await expect(page.locator('.note-body .cm-content')).toHaveCSS('background-image', /linear-gradient/);
   await page.getByRole('button', { name: /Read/ }).click();
   await expect(page.locator('.note-preview')).toHaveCSS('background-image', /linear-gradient/);
 });

@@ -31,6 +31,7 @@ test.describe('opening the app', () => {
     const { page } = sprout;
     const views: Record<string, RegExp> = {
       Graph: /Graph/,
+      Stickies: /Sticky notes/,
       Today: /Study timer/,
       Planner: /Planner/,
       Subjects: /My subjects/,
@@ -89,7 +90,7 @@ test.describe('safety', () => {
     });
     const before = page.url().split('#')[0];
     await page.getByRole('button', { name: /Edit/ }).click();
-    await page.locator('.note-body').fill('[Example](https://example.com/page)');
+    await page.locator('.note-body .cm-content').fill('[Example](https://example.com/page)');
     await page.getByRole('button', { name: /Read/ }).click();
     await page.locator('.note-preview a', { hasText: 'Example' }).click();
     await expect.poll(() => app.evaluate(() => (globalThis as { opened?: string[] }).opened)).toEqual(['https://example.com/page']);

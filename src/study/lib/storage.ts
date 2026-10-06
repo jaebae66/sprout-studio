@@ -12,6 +12,7 @@ export function createDefaultData(): StudyData {
     cards: DEFAULT_CARDS.map((card) => ({ ...card })),
     tasks: [],
     pages: [],
+    stickies: [],
     stats: { day: today(), mins: 0, sessions: 0, total: 0 },
     quizBest: 0,
   };
