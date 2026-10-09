@@ -364,7 +364,7 @@ server.registerTool(
     changeData((data) => {
       // The next spot in a four-across grid; "Tidy up" in the app re-flows them to fit.
       const index = data.stickies.length;
-      const sticky = { id: newId('s'), text: text.trim(), color, x: 22 + (index % 4) * 212, y: 22 + Math.floor(index / 4) * 202 };
+      const sticky = { id: newId('s'), text: text.trim(), color, x: 22 + (index % 4) * 212, y: 22 + Math.floor(index / 4) * 202, lane: '' };
       data.stickies.push(sticky);
       return { added: { id: sticky.id, text: sticky.text, color } };
     }),

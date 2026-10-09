@@ -68,6 +68,18 @@ export interface Settings {
   colors: ColorSet | null;
   /** Paper pattern behind your notes. */
   notePaper: PaperStyle;
+  /** How the Stickies tab is laid out: a free corkboard, or columns like a kanban board. */
+  stickyLayout: StickyLayout;
+  /** The kanban board's columns, left to right. */
+  kanbanLanes: KanbanLane[];
+}
+
+export type StickyLayout = 'corkboard' | 'kanban';
+
+/** A column on the kanban board. */
+export interface KanbanLane {
+  id: string;
+  name: string;
 }
 
 export interface DailyStats {
@@ -93,9 +105,11 @@ export interface Sticky {
   id: string;
   text: string;
   color: StickyColor;
-  /** Position on the board, in pixels from its top-left corner. */
+  /** Position on the corkboard, in pixels from its top-left corner. */
   x: number;
   y: number;
+  /** The kanban column it's in (a KanbanLane id). '' or an unknown id means the first column. */
+  lane: string;
 }
 
 export interface StudyData {

@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { Button } from '../../shared/components/Button';
 import { Panel } from '../../shared/components/Panel';
+import { KanbanBoard } from '../components/KanbanBoard';
+import { StickyCard } from '../components/StickyCard';
 import { useNotes } from '../hooks/useNotes';
 import { newId, patchById, removeById } from '../lib/list';
 import { cleanNoteName } from '../lib/notes';
 import { STICKY_COLORS, type StickyColor } from '../lib/stationery';
 import { useStudy } from '../StudyContext';
-import type { Sticky } from '../types';
+import type { Sticky, StickyLayout } from '../types';
 
 const STICKY_WIDTH = 190;
 const STICKY_HEIGHT = 180;
@@ -44,35 +46,47 @@ interface Drag {
   y: number;
 }
 
-/** A corkboard of sticky notes: add, write, drag, recolour, tidy, or turn one into a full note. */
+const LAYOUTS: { id: StickyLayout; label: string }[] = [
+  { id: 'corkboard', label: '📌 Corkboard' },
+  { id: 'kanban', label: '🗂️ Kanban' },
+];
+
+/**
+ * Sticky notes, on a free corkboard or in kanban columns: add, write, drag, recolour,
+ * tidy, or turn one into a full note.
+ */
 export function StickiesView() {
-  const { data, update, notify, icon } = useStudy();
+  const { data, update, updateSettings, notify, icon } = useStudy();
   const notes = useNotes();
   const { stickies } = data;
+  const { stickyLayout: layout, kanbanLanes: lanes } = data.settings;
   const board = useRef<HTMLDivElement>(null);
   const [boardWidth, setBoardWidth] = useState(800);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
 
+  // The corkboard is only there in its own layout; its last width is kept for placing new stickies.
   useEffect(() => {
-    const element = board.current!;
+    const element = board.current;
+    if (!element) return;
     const observer = new ResizeObserver(() => setBoardWidth(element.clientWidth));
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [layout]);
 
   // A new sticky is ready to type on straight away.
   useEffect(() => {
     if (!focusId) return;
-    board.current?.querySelector<HTMLTextAreaElement>(`[data-sticky="${focusId}"] textarea`)?.focus();
+    document.querySelector<HTMLTextAreaElement>(`[data-sticky="${focusId}"] textarea`)?.focus();
     setFocusId(null);
   }, [focusId, stickies]);
 
   const setStickies = (change: (current: Sticky[]) => Sticky[]) => update((current) => ({ ...current, stickies: change(current.stickies) }));
   const patch = (id: string, changes: Partial<Sticky>) => setStickies((current) => patchById(current, id, changes));
 
-  function add(color: StickyColor) {
-    const sticky: Sticky = { id: newId('s'), text: '', color, ...freeSpot(stickies, boardWidth) };
+  /** On the kanban board it goes at the bottom of `lane` (the first column unless you say). */
+  function add(color: StickyColor, lane = lanes[0].id) {
+    const sticky: Sticky = { id: newId('s'), text: '', color, lane, ...freeSpot(stickies, boardWidth) };
     setStickies((current) => [...current, sticky]);
     setFocusId(sticky.id);
   }
@@ -127,6 +141,8 @@ export function StickiesView() {
     setDrag(null);
   }
 
+  const recolor = (sticky: Sticky) => patch(sticky.id, { color: COLORS[(COLORS.indexOf(sticky.color) + 1) % COLORS.length] });
+
   const lowest = stickies.reduce((bottom, sticky) => Math.max(bottom, sticky.y + STICKY_HEIGHT), 0);
 
   return (
@@ -135,6 +151,13 @@ export function StickiesView() {
       title={`${icon('stickies')} Sticky notes`}
       aside={
         <div className="row">
+          <div className="segmented" role="group" aria-label="Layout">
+            {LAYOUTS.map(({ id, label }) => (
+              <button key={id} type="button" aria-pressed={layout === id} onClick={() => updateSettings({ stickyLayout: id })}>
+                {label}
+              </button>
+            ))}
+          </div>
           <span className="muted small-text">Add one:</span>
           <div className="sticky-adders">
             {COLORS.map((color) => (
@@ -151,61 +174,63 @@ export function StickiesView() {
               </button>
             ))}
           </div>
-          <Button ghost size="small" onClick={tidy} disabled={!stickies.length}>
-            Tidy up
-          </Button>
+          {layout === 'corkboard' && (
+            <Button ghost size="small" onClick={tidy} disabled={!stickies.length}>
+              Tidy up
+            </Button>
+          )}
         </div>
       }
     >
-      <div className="sticky-board" ref={board} style={{ minHeight: lowest + GAP * 2 }}>
-        {!stickies.length && (
-          <div className="sticky-empty">
-            <p>Your board is empty.</p>
-            <p className="small-text">Pick a colour above to add a sticky note. Drag it by its top strip to move it around.</p>
-          </div>
-        )}
-        {stickies.map((sticky, index) => {
-          const colors = STICKY_COLORS[sticky.color] ?? STICKY_COLORS.yellow;
-          const moving = drag?.id === sticky.id;
-          const style = {
-            left: moving ? drag.x : sticky.x,
-            top: moving ? drag.y : sticky.y,
-            width: STICKY_WIDTH,
-            height: STICKY_HEIGHT,
-            '--paper': colors.paper,
-            '--edge': colors.edge,
-            '--tilt': `${moving ? 0 : tilt(sticky.id)}deg`,
-            zIndex: moving ? stickies.length + 1 : index + 1,
-          } as CSSProperties;
-          return (
-            <article key={sticky.id} className={`sticky${moving ? ' lifted' : ''}`} style={style} data-sticky={sticky.id} aria-label={`Sticky note ${index + 1}`}>
-              <div className="sticky-strip" onPointerDown={(event) => startDrag(event, sticky)} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} title="Drag to move">
-                <button
-                  type="button"
-                  className="sticky-action"
-                  title="Change colour"
-                  aria-label="Change colour"
-                  onClick={() => patch(sticky.id, { color: COLORS[(COLORS.indexOf(sticky.color) + 1) % COLORS.length] })}
-                >
-                  🎨
-                </button>
-                <button type="button" className="sticky-action" title="Save as a note" aria-label="Save as a note" disabled={!sticky.text.trim()} onClick={() => makeNote(sticky)}>
-                  📝
-                </button>
-                <button type="button" className="sticky-action" title="Throw away" aria-label="Throw away" onClick={() => remove(sticky)}>
-                  ✕
-                </button>
-              </div>
-              <textarea
-                aria-label="Sticky note text"
-                placeholder="Write something…"
-                value={sticky.text}
-                onChange={(event) => patch(sticky.id, { text: event.target.value })}
+      {layout === 'kanban' ? (
+        <KanbanBoard
+          stickies={stickies}
+          lanes={lanes}
+          update={update}
+          onAdd={(lane) => add('yellow', lane)}
+          onRecolor={recolor}
+          onMakeNote={makeNote}
+          onRemove={remove}
+          onText={(sticky, text) => patch(sticky.id, { text })}
+        />
+      ) : (
+        <div className="sticky-board" ref={board} style={{ minHeight: lowest + GAP * 2 }}>
+          {!stickies.length && (
+            <div className="sticky-empty">
+              <p>Your board is empty.</p>
+              <p className="small-text">Pick a colour above to add a sticky note. Drag it by its top strip to move it around.</p>
+            </div>
+          )}
+          {stickies.map((sticky, index) => {
+            const moving = drag?.id === sticky.id;
+            return (
+              <StickyCard
+                key={sticky.id}
+                sticky={sticky}
+                label={`Sticky note ${index + 1}`}
+                className={moving ? 'lifted' : undefined}
+                style={
+                  {
+                    left: moving ? drag.x : sticky.x,
+                    top: moving ? drag.y : sticky.y,
+                    width: STICKY_WIDTH,
+                    height: STICKY_HEIGHT,
+                    '--tilt': `${moving ? 0 : tilt(sticky.id)}deg`,
+                    zIndex: moving ? stickies.length + 1 : index + 1,
+                  } as CSSProperties
+                }
+                onStripDown={(event) => startDrag(event, sticky)}
+                onStripMove={moveDrag}
+                onStripUp={endDrag}
+                onRecolor={() => recolor(sticky)}
+                onMakeNote={() => makeNote(sticky)}
+                onRemove={() => remove(sticky)}
+                onText={(text) => patch(sticky.id, { text })}
               />
-            </article>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </Panel>
   );
 }

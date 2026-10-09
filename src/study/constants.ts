@@ -81,6 +81,12 @@ export const DEFAULT_SETTINGS: Settings = {
   brk: 5,
   colors: null,
   notePaper: 'plain',
+  stickyLayout: 'corkboard',
+  kanbanLanes: [
+    { id: 'todo', name: 'To do' },
+    { id: 'doing', name: 'Doing' },
+    { id: 'done', name: 'Done' },
+  ],
 };
 
 /** The Sprout theme's own colours (src/shared/styles/theme.css), used as a starting point for your own. */

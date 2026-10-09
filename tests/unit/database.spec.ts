@@ -18,8 +18,8 @@ const sample = () => ({
   tasks: [{ id: 't1', title: 'Read ch 1', unit: 'BIO101', due: '2026-10-05', done: false }],
   pages: [{ name: 'Old', body: 'old notes', updated: 123.5 }],
   stickies: [
-    { id: 's1', text: 'Buy pens', color: 'pink', x: 22, y: 22 },
-    { id: 's2', text: '', color: 'mint', x: 234, y: 40 },
+    { id: 's1', text: 'Buy pens', color: 'pink', x: 22, y: 22, lane: 'doing' },
+    { id: 's2', text: '', color: 'mint', x: 234, y: 40, lane: '' },
   ],
   stats: { day: '2026-10-02', mins: 30, sessions: 1, total: 400 },
 });
@@ -92,8 +92,24 @@ test.describe('SQLite database', () => {
     expect(db.load().stickies).toEqual(sample().stickies);
     db.close();
     const check = new DatabaseSync(file, { readOnly: true });
-    expect(check.prepare('PRAGMA user_version').get()).toEqual({ user_version: 2 });
+    expect(check.prepare('PRAGMA user_version').get()).toEqual({ user_version: 3 });
     check.close();
+  });
+
+  test('upgrades a version 2 database (before kanban columns), putting stickies in the first column', () => {
+    let db = openDatabase(file);
+    db.save(sample());
+    db.close();
+    // Turn it back into a version 2 file.
+    const raw = new DatabaseSync(file);
+    raw.exec('ALTER TABLE sticky_notes DROP COLUMN lane; PRAGMA user_version = 2;');
+    raw.close();
+
+    db = openDatabase(file);
+    expect(db.load().stickies).toEqual(sample().stickies.map((sticky) => ({ ...sticky, lane: '' })));
+    db.save(sample());
+    expect(db.load()).toEqual(sample());
+    db.close();
   });
 
   test('notices writes from another connection (how the app spots MCP changes)', () => {

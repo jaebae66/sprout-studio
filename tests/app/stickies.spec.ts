@@ -1,4 +1,8 @@
+import type { Locator } from '@playwright/test';
 import { expect, test } from '../support/sprout';
+
+/** What's typed in each of these boxes, in order. */
+const values = (boxes: Locator) => boxes.evaluateAll((elements) => elements.map((element) => (element as HTMLInputElement).value));
 
 test.beforeEach(async ({ sprout }) => {
   await sprout.openTab('Stickies');
@@ -76,4 +80,86 @@ test('throwing away asks first when the sticky has writing on it', async ({ spro
   await sticky.getByRole('button', { name: 'Throw away' }).click();
   await expect(page.locator('.sticky')).toHaveCount(0);
   await expect.poll(() => sprout.query('SELECT * FROM sticky_notes')).toEqual([]);
+});
+
+test.describe('kanban layout', () => {
+  test.beforeEach(async ({ sprout }) => {
+    await sprout.page.getByRole('button', { name: '🗂️ Kanban' }).click();
+  });
+
+  test('shows To do, Doing and Done, and remembers the layout', async ({ sprout }) => {
+    const { page } = sprout;
+    await expect.poll(() => values(page.getByRole('textbox', { name: 'Column name' }))).toEqual(['To do', 'Doing', 'Done']);
+    await expect.poll(() => sprout.query("SELECT value FROM settings WHERE key = 'stickyLayout'")).toEqual([{ value: '"kanban"' }]);
+
+    await sprout.restart();
+    await sprout.openTab('Stickies');
+    await expect(sprout.page.getByRole('textbox', { name: 'Column name' })).toHaveCount(3);
+  });
+
+  test('adds a sticky to a column and moves it along with the arrows', async ({ sprout }) => {
+    const { page } = sprout;
+    await page.getByRole('button', { name: 'Add a sticky to Doing' }).click();
+    await page.keyboard.type('Essay plan');
+    await expect.poll(() => sprout.query('SELECT text, lane FROM sticky_notes')).toEqual([{ text: 'Essay plan', lane: 'doing' }]);
+
+    const sticky = page.locator('.sticky');
+    await sticky.hover();
+    await sticky.getByRole('button', { name: 'Move right' }).click();
+    await expect(page.getByRole('region', { name: 'Done column' }).locator('.sticky')).toHaveCount(1);
+    await expect.poll(() => sprout.query('SELECT lane FROM sticky_notes')).toEqual([{ lane: 'done' }]);
+  });
+
+  test('dragging a sticky drops it into another column, in the right place', async ({ sprout }) => {
+    const { page } = sprout;
+    for (const text of ['First', 'Second']) {
+      await page.getByRole('button', { name: 'Add a sticky to Doing' }).click();
+      await page.keyboard.type(text);
+    }
+    await page.getByRole('button', { name: 'Add a sticky to To do' }).click();
+    await page.keyboard.type('Moving');
+
+    const strip = page.getByRole('region', { name: 'To do column' }).locator('.sticky-strip');
+    const from = (await strip.boundingBox())!;
+    const target = (await page.getByRole('region', { name: 'Doing column' }).locator('.sticky').first().boundingBox())!;
+    // The middle of the strip, clear of its buttons.
+    await page.mouse.move(from.x + from.width / 2, from.y + 8);
+    await page.mouse.down();
+    await page.mouse.move(target.x + 40, target.y + target.height - 10, { steps: 10 });
+    await expect(page.locator('.kanban-placeholder')).toBeVisible();
+    await page.mouse.up();
+
+    await expect.poll(() => values(page.getByRole('region', { name: 'Doing column' }).getByRole('textbox', { name: 'Sticky note text' }))).toEqual(['First', 'Moving', 'Second']);
+    await expect
+      .poll(() => sprout.query('SELECT text, lane FROM sticky_notes ORDER BY position'))
+      .toEqual([
+        { text: 'First', lane: 'doing' },
+        { text: 'Moving', lane: 'doing' },
+        { text: 'Second', lane: 'doing' },
+      ]);
+  });
+
+  test('renames, adds and removes columns, moving their stickies to the first', async ({ sprout }) => {
+    const { page } = sprout;
+    await page.getByRole('button', { name: 'Add a sticky to Done' }).click();
+    await page.keyboard.type('Finished');
+
+    await page.getByRole('button', { name: '+ Add column' }).click();
+    await page.keyboard.type('Exam week');
+    await expect.poll(() => values(page.getByRole('textbox', { name: 'Column name' }))).toEqual(['To do', 'Doing', 'Done', 'Exam week']);
+
+    const done = page.getByRole('region', { name: 'Done column' });
+    await done.hover();
+    page.once('dialog', (dialog) => dialog.accept());
+    await done.getByRole('button', { name: 'Remove column' }).click();
+    await expect.poll(() => values(page.getByRole('textbox', { name: 'Column name' }))).toEqual(['To do', 'Doing', 'Exam week']);
+    await expect(page.getByRole('region', { name: 'To do column' }).getByRole('textbox', { name: 'Sticky note text' })).toHaveValue('Finished');
+  });
+
+  test('stickies keep their corkboard spot when you switch back', async ({ sprout }) => {
+    const { page } = sprout;
+    await page.getByRole('button', { name: 'Add a sticky to To do' }).click();
+    await page.getByRole('button', { name: '📌 Corkboard' }).click();
+    await expect(page.locator('.sticky')).toHaveCSS('left', '22px');
+  });
 });

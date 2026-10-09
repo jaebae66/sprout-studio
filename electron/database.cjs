@@ -4,7 +4,7 @@
 const { DatabaseSync } = require('node:sqlite');
 
 /** Bump when the tables change, and add a step to `migrate` that upgrades older files. */
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 const SCHEMA = `
   CREATE TABLE profile (
@@ -59,6 +59,9 @@ const STICKY_NOTES = `
   );
 `;
 
+/** Version 3: which kanban column each sticky note is in. */
+const STICKY_LANES = `ALTER TABLE sticky_notes ADD COLUMN lane TEXT NOT NULL DEFAULT '';`;
+
 /** Brings a database file of any older version up to date, one step at a time. */
 function migrate(db) {
   const { user_version: version } = db.prepare('PRAGMA user_version').get();
@@ -67,6 +70,7 @@ function migrate(db) {
   try {
     if (version < 1) db.exec(SCHEMA);
     if (version < 2) db.exec(STICKY_NOTES);
+    if (version < 3) db.exec(STICKY_LANES);
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}; COMMIT;`);
   } catch (error) {
     db.exec('ROLLBACK');
@@ -91,7 +95,7 @@ function openDatabase(file) {
     tasks: db.prepare('SELECT id, title, subject, due, done FROM tasks ORDER BY position'),
     latestDay: db.prepare('SELECT day, minutes, sessions FROM daily_stats ORDER BY day DESC LIMIT 1'),
     pendingNotes: db.prepare('SELECT name, body, updated FROM pending_notes'),
-    stickies: db.prepare('SELECT id, text, color, x, y FROM sticky_notes ORDER BY position'),
+    stickies: db.prepare('SELECT id, text, color, x, y, lane FROM sticky_notes ORDER BY position'),
 
     saveProfile: db.prepare(`
       INSERT INTO profile (id, name, course, quiz_best, total_minutes) VALUES (1, ?, ?, ?, ?)
@@ -108,7 +112,7 @@ function openDatabase(file) {
       INSERT INTO daily_stats (day, minutes, sessions) VALUES (?, ?, ?)
       ON CONFLICT (day) DO UPDATE SET minutes = excluded.minutes, sessions = excluded.sessions`),
     savePendingNote: db.prepare('INSERT OR REPLACE INTO pending_notes VALUES (?, ?, ?)'),
-    saveSticky: db.prepare('INSERT OR REPLACE INTO sticky_notes VALUES (?, ?, ?, ?, ?, ?)'),
+    saveSticky: db.prepare('INSERT OR REPLACE INTO sticky_notes VALUES (?, ?, ?, ?, ?, ?, ?)'),
 
     getPreference: db.prepare('SELECT value FROM preferences WHERE key = ?'),
     setPreference: db.prepare(`
@@ -134,7 +138,7 @@ function openDatabase(file) {
         .all()
         .map(({ id, title, subject, due, done }) => ({ id, title, unit: subject, due, done: done === 1 })),
       pages: query.pendingNotes.all().map(({ name, body, updated }) => ({ name, body, updated })),
-      stickies: query.stickies.all().map(({ id, text, color, x, y }) => ({ id, text, color, x, y })),
+      stickies: query.stickies.all().map(({ id, text, color, x, y, lane }) => ({ id, text, color, x, y, lane })),
       stats: {
         day: day?.day ?? '',
         mins: day?.minutes ?? 0,
@@ -170,7 +174,7 @@ function openDatabase(file) {
       );
       for (const note of data.pages ?? []) query.savePendingNote.run(text(note.name), text(note.body), Number(note.updated) || 0);
       (data.stickies ?? []).forEach((sticky, position) =>
-        query.saveSticky.run(text(sticky.id), position, text(sticky.text), text(sticky.color), integer(sticky.x), integer(sticky.y)),
+        query.saveSticky.run(text(sticky.id), position, text(sticky.text), text(sticky.color), integer(sticky.x), integer(sticky.y), text(sticky.lane)),
       );
 
       if (data.stats?.day) query.saveDay.run(text(data.stats.day), integer(data.stats.mins), integer(data.stats.sessions));
