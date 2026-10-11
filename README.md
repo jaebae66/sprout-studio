@@ -1,5 +1,7 @@
 # Sprout Studio
-
+![Notes](screenshots/notes.png)
+![Stickies](screenshots/stickies.png)
+![Graph](screenshots/graph.png)
 One app, laid out like Obsidian: an icon ribbon on the left and one view at a time. It opens on Notes (or wherever you left off).
 
 - **Notes** and **Graph**: Markdown notes with `[[links]]`, backlinks, search, and a graph of how they connect. A toolbar adds formatting, six highlighter colours, checklists you can tick while reading, stationery cards (tip, key idea, question…), washi-tape dividers, stickers and page templates (Cornell notes, lecture notes, revision summary…).
@@ -46,6 +48,17 @@ After changing the code, run `npm run package:desktop` again to update the app.
 Each person gets their own empty Sprout Studio: their notes go in their own `Documents\Sprout Vault`, and their data in their own `%APPDATA%\sprout-studio`. Fonts are bundled, so it looks right offline.
 
 The files aren't code-signed (that needs a paid certificate), so Windows SmartScreen shows "Windows protected your PC" the first time. Click **More info**, then **Run anyway**. Bump `version` in `package.json` before building a new release so the installer upgrades older installs cleanly.
+
+### On Linux
+
+`npm run dist:linux` builds **Sprout Studio 1.1.0.AppImage** into `release/installers/`. An AppImage is one file that runs on most Linux systems (Ubuntu, Fedora, Mint…) without installing:
+
+```sh
+chmod +x "Sprout Studio 1.1.0.AppImage"
+./"Sprout Studio 1.1.0.AppImage"
+```
+
+Build it on Linux (or in WSL on Windows: `wsl --install`, then install Node.js inside it). On Linux, notes go in `~/Documents/Sprout Vault` and data in `~/.config/sprout-studio`. `npm run package:desktop` packages for whichever system you run it on.
 
 ## Note-taking extras
 

@@ -13,7 +13,8 @@ if (process.env.SPROUT_USER_DATA) app.setPath('userData', path.resolve(process.e
 
 const PAGE = path.join(__dirname, '..', 'dist', 'index.html');
 const PAGE_URL = pathToFileURL(PAGE).href;
-const ICON = path.join(__dirname, '..', 'icons', 'sprout-study.ico');
+// Windows uses .ico icons; Linux (and macOS) windows want a .png.
+const ICON = path.join(__dirname, '..', 'icons', process.platform === 'win32' ? 'sprout-study.ico' : 'sprout-study.png');
 const CONFIG = path.join(app.getPath('userData'), 'config.json');
 const DATABASE = path.join(app.getPath('userData'), 'sprout-studio.db');
 

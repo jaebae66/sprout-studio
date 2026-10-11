@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState, type PointerEvent } from 'react';
+import { Fragment, useEffect, useRef, useState, type PointerEvent } from 'react';
 import { newId, removeById } from '../lib/list';
 import type { KanbanLane, Sticky, StudyData } from '../types';
 import { StickyCard } from './StickyCard';
@@ -39,6 +39,14 @@ export function laneOf(sticky: Sticky, lanes: readonly KanbanLane[]): string {
 export function KanbanBoard({ stickies, lanes, update, onAdd, onRecolor, onMakeNote, onRemove, onText }: KanbanBoardProps) {
   const board = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+
+  // A new column is ready to rename straight away.
+  useEffect(() => {
+    if (!renaming) return;
+    board.current?.querySelector<HTMLInputElement>(`[data-lane="${renaming}"] input`)?.select();
+    setRenaming(null);
+  }, [renaming, lanes]);
 
   const setLanes = (change: (current: KanbanLane[]) => KanbanLane[]) =>
     update((current) => ({ ...current, settings: { ...current.settings, kanbanLanes: change(current.settings.kanbanLanes) } }));
@@ -59,8 +67,7 @@ export function KanbanBoard({ stickies, lanes, update, onAdd, onRecolor, onMakeN
   function addLane() {
     const lane = { id: newId('l'), name: 'New column' };
     setLanes((current) => [...current, lane]);
-    // Ready to rename straight away.
-    requestAnimationFrame(() => board.current?.querySelector<HTMLInputElement>(`[data-lane="${lane.id}"] input`)?.select());
+    setRenaming(lane.id);
   }
 
   function removeLane(lane: KanbanLane) {

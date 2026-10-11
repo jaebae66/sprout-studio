@@ -17,7 +17,8 @@
     "test:packaged": "npm run package:desktop && playwright test --project=packaged",
     "test:report": "playwright show-report",
     "mcp": "node mcp/server.mjs",
-    "dist": "npm run build && electron-builder --win"
+    "dist": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {},
   "devDependencies": {
@@ -83,6 +84,22 @@
           ]
         }
       ]
+    },
+    "linux": {
+      "icon": "icons/sprout-study.png",
+      "category": "Education",
+      "synopsis": "Notes, study tools and a book maker in one cosy app.",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "appImage": {
+      "artifactName": "Sprout Studio ${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
