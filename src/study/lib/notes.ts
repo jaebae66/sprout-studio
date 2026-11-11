@@ -53,6 +53,15 @@ export function retargetLinks(body: string, oldName: string, newName: string): s
   );
 }
 
+/**
+ * Words in a note as you'd read them: highlighter tags are ignored, and Markdown
+ * markers on their own (`-`, `#`, `- [ ]`, `**`, `>`) don't count as words.
+ */
+export function noteWordCount(body: string): number {
+  const text = body.replace(/<[^>]*>/g, '');
+  return text.match(/\S+/g)?.filter((word) => /[\p{L}\p{N}]/u.test(word)).length ?? 0;
+}
+
 export interface NoteMatch {
   note: Note;
   /** A short piece of the body around the first match, or '' if only the name matched. */

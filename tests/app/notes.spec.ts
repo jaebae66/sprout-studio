@@ -136,3 +136,15 @@ test('notes from the old single notes box move into the vault', async ({ sprout 
   await sprout.restart();
   await expect.poll(() => sprout.readNote('Notes')).toBe('my old notes');
 });
+
+test('shows the word count, and how many words are selected', async ({ sprout }) => {
+  const { page } = sprout;
+  await openNote(page, 'Water');
+  await page.getByRole('button', { name: /Edit/ }).click();
+  const count = page.locator('.word-count');
+  await expect(count).toHaveText('4 words · ~1 min read');
+  await page.locator('.note-body .cm-content').fill('one two three');
+  await expect(count).toHaveText('3 words · ~1 min read');
+  await page.keyboard.press('Shift+Control+ArrowLeft');
+  await expect(count).toHaveText('1 of 3 words');
+});

@@ -4,6 +4,7 @@ import {
   cleanNoteName,
   findNote,
   linkedNames,
+  noteWordCount,
   retargetLinks,
   searchNotes,
   uniqueNoteName,
@@ -54,4 +55,10 @@ test('search matches names and text, with a snippet for text', () => {
   expect(results[0].snippet).toBe('');
   expect(results[1].snippet).toContain('sugar');
   expect(searchNotes(notes, '   ')).toEqual([]);
+});
+
+test('word count skips Markdown markers and highlighter tags', () => {
+  expect(noteWordCount('')).toBe(0);
+  expect(noteWordCount('# Plants\n\n- [ ] water **them** daily\n> - ok')).toBe(5);
+  expect(noteWordCount('A <mark class="hl-pink">bright</mark> ==idea== [[My note|here]] in 2026')).toBe(7);
 });

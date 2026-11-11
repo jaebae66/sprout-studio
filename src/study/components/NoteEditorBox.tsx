@@ -44,18 +44,20 @@ interface NoteEditorBoxProps {
   paperStyle: CSSProperties;
   placeholderText: string;
   autoFocus?: boolean;
+  /** Called with the selected text whenever the selection changes ('' when nothing is selected). */
+  onSelect?: (selected: string) => void;
 }
 
 /** The note's writing area: a CodeMirror editor with live preview. */
 export const NoteEditorBox = forwardRef<TextEditor | null, NoteEditorBoxProps>(function NoteEditorBox(
-  { value, onChange, shortcuts, paperStyle, placeholderText, autoFocus },
+  { value, onChange, shortcuts, paperStyle, placeholderText, autoFocus, onSelect },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Kept in refs so the editor is built once but always calls the latest handlers.
-  const latest = useRef({ onChange, shortcuts });
-  latest.current = { onChange, shortcuts };
+  const latest = useRef({ onChange, shortcuts, onSelect });
+  latest.current = { onChange, shortcuts, onSelect };
 
   // Looks the view up on each call: it's created after this handle is set up.
   useImperativeHandle(
@@ -87,6 +89,10 @@ export const NoteEditorBox = forwardRef<TextEditor | null, NoteEditorBoxProps>(f
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !update.transactions.some((transaction) => transaction.annotation(fromOutside))) {
               latest.current.onChange(update.state.doc.toString());
+            }
+            if (update.selectionSet || update.docChanged) {
+              const { from, to } = update.state.selection.main;
+              latest.current.onSelect?.(update.state.sliceDoc(from, to));
             }
           }),
         ],

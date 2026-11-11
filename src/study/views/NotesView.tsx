@@ -7,13 +7,16 @@ import { NoteEditorBox, type TextEditor } from '../components/NoteEditorBox';
 import { formatShortcuts, NoteToolbar } from '../components/NoteToolbar';
 import { useNotes, type NotesStore } from '../hooks/useNotes';
 import { toggleTask } from '../lib/formatting';
-import { backlinks, cleanNoteName, findNote, renderNote, searchNotes } from '../lib/notes';
+import { backlinks, cleanNoteName, findNote, noteWordCount, renderNote, searchNotes } from '../lib/notes';
 import type { HighlighterId } from '../lib/stationery';
 import { loadOpenNote, markWelcomed, saveOpenNote, wasWelcomed } from '../lib/storage';
 import { useStudy } from '../StudyContext';
 import type { Note } from '../types';
 
 type Mode = 'edit' | 'preview';
+
+/** An average silent reading speed, for the "min read" estimate. */
+const WORDS_PER_MINUTE = 230;
 
 const WELCOME_NOTE = `# Welcome to Sprout Studio 🌱
 
@@ -205,6 +208,9 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
   const [title, setTitle] = useState(note.name);
   const [highlighter, setHighlighter] = useState<HighlighterId>('yellow');
   const editor = useRef<TextEditor | null>(null);
+  const [selectedText, setSelectedText] = useState('');
+  const words = useMemo(() => noteWordCount(note.body), [note.body]);
+  const selectedWords = mode === 'edit' && selectedText ? noteWordCount(selectedText) : 0;
   const linkedFrom = backlinks(store.notes, note.name);
   const html = useMemo(
     () => (mode === 'preview' ? renderNote(note.body, store.notes) : ''),
@@ -269,6 +275,7 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
           onKeyDown={handleTitleKey}
         />
         <div className="row">
+          <WordCount words={words} selected={selectedWords} characters={note.body.length} />
           <div className="segmented" role="group" aria-label="Mode">
             <button type="button" aria-pressed={mode === 'edit'} onClick={() => onMode('edit')} title="Edit (Ctrl+E)">
               ✏️ Edit
@@ -299,6 +306,7 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
             paperStyle={paperStyle(paper, '1.65em')}
             placeholderText="Start writing… the toolbar above has highlighters, cards, stickers and templates."
             autoFocus={!note.body}
+            onSelect={setSelectedText}
           />
         </div>
       ) : (
@@ -328,5 +336,25 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
         )}
       </div>
     </section>
+  );
+}
+
+interface WordCountProps {
+  words: number;
+  /** Words in the current selection, or 0 when nothing is selected. */
+  selected: number;
+  characters: number;
+}
+
+/** "340 words · ~2 min read", or "12 of 340 words" while some text is selected. */
+function WordCount({ words, selected, characters }: WordCountProps) {
+  const plural = (count: number, unit: string) => `${count.toLocaleString()} ${unit}${count === 1 ? '' : 's'}`;
+  const minutes = Math.max(1, Math.round(words / WORDS_PER_MINUTE));
+  return (
+    <span className="word-count muted small-text" aria-live="polite" title={plural(characters, 'character')}>
+      {selected
+        ? `${selected.toLocaleString()} of ${plural(words, 'word')}`
+        : `${plural(words, 'word')}${words ? ` · ~${minutes} min read` : ''}`}
+    </span>
   );
 }
