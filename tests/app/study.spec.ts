@@ -96,3 +96,32 @@ test('Today: your name and course show in the greeting', async ({ sprout }) => {
   await expect(page.locator('header.top h1')).toHaveText('Hi, Jess');
   await expect(page.locator('header.top .qual')).toHaveText('Biology');
 });
+
+test('Today: the study timer takes your own title and remembers it', async ({ sprout }) => {
+  const { page } = sprout;
+  await sprout.openTab('Today');
+  const title = page.getByRole('textbox', { name: 'Timer title' });
+  await expect(title).toHaveAttribute('placeholder', 'What are you studying?');
+  await title.fill('  Biology revision ');
+  await title.press('Enter');
+  await expect(title).toHaveValue('Biology revision');
+  await expect
+    .poll(() => sprout.query("SELECT value FROM settings WHERE key = 'timerTitle'"))
+    .toEqual([{ value: '"Biology revision"' }]);
+});
+
+test('Flashcards: delete a card you don\u2019t want, after confirming', async ({ sprout }) => {
+  const { page } = sprout;
+  await sprout.openTab('Flashcards');
+  await expect(page.getByText('Term 1 / 4')).toBeVisible();
+
+  page.once('dialog', (dialog) => dialog.dismiss());
+  await page.getByRole('button', { name: /^Delete card/ }).click();
+  await expect(page.getByText('Term 1 / 4')).toBeVisible();
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: /^Delete card/ }).click();
+  await expect(page.locator('.toast')).toHaveText('Card deleted');
+  await expect(page.getByText('Term 1 / 3')).toBeVisible();
+  await expect.poll(() => sprout.query('SELECT COUNT(*) AS cards FROM flashcards')).toEqual([{ cards: 3 }]);
+});

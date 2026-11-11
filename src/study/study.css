@@ -329,6 +329,23 @@ input[type="range"] {
   text-align: center;
 }
 
+.timer-title {
+  width: 100%;
+  max-width: 320px;
+  padding-inline: 4px !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.timer-title:hover,
+.timer-title:focus {
+  border-color: var(--line) !important;
+}
+
 .ring {
   display: grid;
   place-items: center;

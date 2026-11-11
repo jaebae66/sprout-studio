@@ -64,6 +64,8 @@ export interface Settings {
   focus: number;
   /** Break length in minutes. */
   brk: number;
+  /** Your own title for the study timer, e.g. "Biology revision", or '' for none. */
+  timerTitle: string;
   /** Your own colours, or null for the Sprout theme (which follows light/dark and `accent`). */
   colors: ColorSet | null;
   /** Paper pattern behind your notes. */

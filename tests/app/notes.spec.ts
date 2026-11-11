@@ -148,3 +148,50 @@ test('shows the word count, and how many words are selected', async ({ sprout })
   await page.keyboard.press('Shift+Control+ArrowLeft');
   await expect(count).toHaveText('1 of 3 words');
 });
+
+test('exports all notes as a zip, and imports them back without duplicates', async ({ sprout }) => {
+  const { page } = sprout;
+  const zip = await sprout.download(() => page.getByRole('button', { name: /Export all/ }).click());
+  expect(path.basename(zip)).toMatch(/Sprout notes \d{4}-\d{2}-\d{2}\.zip$/);
+  await expect(page.locator('.toast')).toHaveText('Exported 3 notes');
+
+  await page.locator('#import-notes').setInputFiles(zip);
+  await expect(page.locator('.toast')).toHaveText('No new notes to import · 3 notes already here');
+  await expect(page.locator('.note-list li')).toHaveCount(3);
+});
+
+test('imports .md and .txt files as new notes and opens the first', async ({ sprout }) => {
+  const { page } = sprout;
+  const folder = path.join(sprout.userData, 'to-import');
+  fs.mkdirSync(folder, { recursive: true });
+  const md = path.join(folder, 'Cells.md');
+  const txt = path.join(folder, 'Water.txt');
+  const pdf = path.join(folder, 'slides.pdf');
+  fs.writeFileSync(md, '# Cells\nThey divide.');
+  fs.writeFileSync(txt, 'Different water text');
+  fs.writeFileSync(pdf, '%PDF');
+
+  await page.locator('#import-notes').setInputFiles([md, txt, pdf]);
+  await expect(page.locator('.toast')).toHaveText('Imported 2 notes · skipped 1 file (not .md or .txt)');
+  await expect(page.locator('.note-title')).toHaveValue('Cells');
+  await expect.poll(() => sprout.readNote('Cells')).toBe('# Cells\nThey divide.');
+  // "Water" already exists with other text, so the import doesn't overwrite it.
+  await expect.poll(() => sprout.readNote('Water 2')).toBe('Different water text');
+  expect(sprout.readNote('Water')).toBe('Wet. Back to [[Plants#Intro]].');
+});
+
+test('downloads a single note as a .md file', async ({ sprout }) => {
+  const { page } = sprout;
+  await openNote(page, 'Water');
+  const file = await sprout.download(() => page.getByRole('button', { name: 'Export Water' }).click());
+  expect(path.basename(file)).toMatch(/-Water\.md$/);
+  expect(fs.readFileSync(file, 'utf8')).toBe('Wet. Back to [[Plants#Intro]].');
+});
+
+test('the backup file in Customise includes the vault notes', async ({ sprout }) => {
+  const { page } = sprout;
+  await sprout.openTab('Customise');
+  const backup = await sprout.download(() => page.getByRole('button', { name: 'Save backup file' }).click());
+  const saved = JSON.parse(fs.readFileSync(backup, 'utf8'));
+  expect(saved.pages.map((page: { name: string }) => page.name).sort()).toEqual(['Photosynthesis', 'Plants', 'Water']);
+});

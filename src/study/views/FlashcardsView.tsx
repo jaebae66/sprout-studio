@@ -8,12 +8,18 @@ import { useStudy } from '../StudyContext';
 import type { Flashcard } from '../types';
 
 export function FlashcardsView({ session }: { session: FlashcardSession }) {
-  const { update, icon } = useStudy();
+  const { update, notify, icon } = useStudy();
   const { card } = session;
 
   function toggleKnown(target: Flashcard) {
     update((data) => ({ ...data, cards: patchById(data.cards, target.id, { known: !target.known }) }));
     session.afterMarking();
+  }
+
+  function deleteCard(target: Flashcard) {
+    if (!confirm(`Delete the card “${target.q}”?`)) return;
+    update((data) => ({ ...data, cards: data.cards.filter((each) => each.id !== target.id) }));
+    notify('Card deleted');
   }
 
   return (
@@ -54,8 +60,13 @@ export function FlashcardsView({ session }: { session: FlashcardSession }) {
             <Button ghost onClick={session.next}>
               Next
             </Button>
+            <Button ghost onClick={() => deleteCard(card)} aria-label={`Delete card ${card.q}`} title="Delete this card">
+              🗑️ Delete
+            </Button>
           </div>
         </>
+      ) : !session.deck.length && !session.hideKnown ? (
+        <div className="empty">No cards yet. Add one below.</div>
       ) : (
         <div className="empty">
           You know every card {icon('done')} Untick “Hide cards I know” to review them.

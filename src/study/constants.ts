@@ -79,6 +79,7 @@ export const DEFAULT_SETTINGS: Settings = {
   photo: null,
   focus: 25,
   brk: 5,
+  timerTitle: '',
   colors: null,
   notePaper: 'plain',
   stickyLayout: 'corkboard',

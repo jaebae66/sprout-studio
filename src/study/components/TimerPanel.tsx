@@ -5,11 +5,29 @@ import type { PomodoroTimer } from '../hooks/usePomodoro';
 import { formatClock } from '../lib/dates';
 import { useStudy } from '../StudyContext';
 
+/** Longest timer title, so it fits above the ring. */
+const MAX_TITLE_LENGTH = 60;
+
 export function TimerPanel({ timer }: { timer: PomodoroTimer }) {
-  const { data, icon } = useStudy();
+  const { data, update, icon } = useStudy();
+
+  function setTitle(title: string) {
+    update((current) => ({ ...current, settings: { ...current.settings, timerTitle: title } }));
+  }
 
   return (
     <Panel className="timer" title={`${icon('timer')} Study timer`}>
+      <input
+        type="text"
+        className="timer-title"
+        aria-label="Timer title"
+        placeholder="What are you studying?"
+        maxLength={MAX_TITLE_LENGTH}
+        value={data.settings.timerTitle}
+        onChange={(event) => setTitle(event.target.value)}
+        onBlur={(event) => setTitle(event.target.value.trim())}
+        onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
+      />
       <TimerRing
         progress={timer.progress}
         time={formatClock(timer.secondsLeft)}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Keyboard
 import { Button } from '../../shared/components/Button';
 import { Panel } from '../../shared/components/Panel';
 import { cx } from '../../shared/lib/classNames';
+import { downloadBlob } from '../../shared/lib/download';
 import { keys, trashName } from '../../shared/lib/platform';
 import { paperBackground, type PaperStyle } from '../../shared/lib/paper';
 import { NoteEditorBox, type TextEditor } from '../components/NoteEditorBox';
@@ -10,7 +11,9 @@ import { useNotes, type NotesStore } from '../hooks/useNotes';
 import { toggleTask } from '../lib/formatting';
 import { backlinks, cleanNoteName, findNote, noteWordCount, renderNote, searchNotes } from '../lib/notes';
 import type { HighlighterId } from '../lib/stationery';
+import { IMPORT_ACCEPT, noteFileName, notesToZip, planImport, readNoteFiles } from '../lib/noteFiles';
 import { loadOpenNote, markWelcomed, saveOpenNote, wasWelcomed } from '../lib/storage';
+import { today } from '../lib/dates';
 import { useStudy } from '../StudyContext';
 import type { Note } from '../types';
 
@@ -113,7 +116,7 @@ export function NotesView() {
             : sorted.map((note) => <NoteListItem key={note.name} note={note} current={note === open} onOpen={show} />)}
         </ul>
         {query.trim() && !results.length && <p className="muted small-text">No notes match “{query.trim()}”.</p>}
-        <VaultFooter store={store} />
+        <NotesFooter store={store} onOpen={show} />
       </Panel>
 
       {open ? (
@@ -165,23 +168,76 @@ function NoteListItem({ note, current, onOpen, children }: NoteListItemProps) {
   );
 }
 
-function VaultFooter({ store }: { store: NotesStore }) {
-  if (!store.folder) {
-    return <p className="muted small-text notes-where">Saved in this browser.</p>;
+/** Export and import, and where the notes are kept. */
+function NotesFooter({ store, onOpen }: { store: NotesStore; onOpen: (name: string) => void }) {
+  const { notify } = useStudy();
+  const plural = (count: number) => `${count} note${count === 1 ? '' : 's'}`;
+
+  async function exportAll() {
+    if (!store.notes.length) {
+      notify('There are no notes to export yet');
+      return;
+    }
+    downloadBlob(`Sprout notes ${today()}.zip`, await notesToZip(store.notes));
+    notify(`Exported ${plural(store.notes.length)}`);
   }
+
+  async function importFiles(files: File[]) {
+    try {
+      const { notes, ignored } = await readNoteFiles(files);
+      const plan = planImport(store.notes, notes);
+      const created = plan.create.map((note) => store.create(note.name, note.body));
+      const parts = [
+        created.length ? `Imported ${plural(created.length)}` : 'No new notes to import',
+        plan.unchanged ? `${plural(plan.unchanged)} already here` : '',
+        ignored ? `skipped ${ignored} file${ignored === 1 ? '' : 's'} (not .md or .txt)` : '',
+      ];
+      notify(parts.filter(Boolean).join(' · '));
+      if (created[0]) onOpen(created[0]);
+    } catch {
+      notify('Could not read that file');
+    }
+  }
+
   return (
     <div className="notes-where stack tight">
-      <p className="muted small-text" title={store.folder}>
-        Vault: <span className="vault-path">{store.folder}</span>
-      </p>
       <div className="row">
-        <Button size="small" ghost onClick={store.openFolder}>
-          Open folder
+        <Button size="small" ghost onClick={() => void exportAll()} title="Download every note as .md files in a .zip">
+          ⬇️ Export all
         </Button>
-        <Button size="small" ghost onClick={store.chooseFolder}>
-          Change…
-        </Button>
+        <label className="btn ghost small" htmlFor="import-notes" title="Add .md or .txt files, or a .zip of them">
+          ⬆️ Import
+        </label>
+        <input
+          type="file"
+          id="import-notes"
+          accept={IMPORT_ACCEPT}
+          multiple
+          hidden
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            event.target.value = '';
+            if (files.length) void importFiles(files);
+          }}
+        />
       </div>
+      {store.folder ? (
+        <>
+          <p className="muted small-text" title={store.folder}>
+            Vault: <span className="vault-path">{store.folder}</span>
+          </p>
+          <div className="row">
+            <Button size="small" ghost onClick={store.openFolder}>
+              Open folder
+            </Button>
+            <Button size="small" ghost onClick={store.chooseFolder}>
+              Change…
+            </Button>
+          </div>
+        </>
+      ) : (
+        <p className="muted small-text">Saved in this browser. Export now and then to keep a copy.</p>
+      )}
     </div>
   );
 }
@@ -290,6 +346,15 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
               📖 Read
             </button>
           </div>
+          <Button
+            size="small"
+            ghost
+            onClick={() => downloadBlob(noteFileName(note), new Blob([note.body], { type: 'text/markdown' }))}
+            aria-label={`Export ${note.name}`}
+            title="Download this note as a .md file"
+          >
+            ⬇️
+          </Button>
           <Button size="small" ghost onClick={handleDelete} aria-label={`Delete ${note.name}`} title="Delete note">
             🗑️
           </Button>
