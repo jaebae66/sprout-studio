@@ -25,6 +25,8 @@ npm run build      # type-check, then build into dist/
 npm run desktop          # build, then open it as a desktop app (Electron)
 npm run package:desktop  # build, then package it into release/Sprout Studio-win32-x64/
 npm run dist             # build the installer and portable .exe to share (see Sharing the app)
+npm run dist:linux       # build the Linux AppImage (on Linux)
+npm run dist:mac         # build the macOS .dmg (on a Mac, or use GitHub: see On macOS)
 npm test                 # build, then run every Playwright test (see Testing)
 npm run test:packaged    # package, then run the app tests against the packaged .exe
 npm run mcp              # start the Sprout Studio MCP server on stdio
@@ -34,7 +36,7 @@ npm run mcp              # start the Sprout Studio MCP server on stdio
 
 ## Desktop app
 
-`electron/main.cjs` opens `dist/index.html` in its own window. In the desktop app, notes are plain `<name>.md` files in a vault folder (`Documents\Sprout Vault` unless you pick another under Notes → Change…), so other Markdown editors can open them too, and edits made elsewhere show up straight away. `electron/preload.cjs` gives the page only the vault functions listed in `src/study/lib/vault.ts`. Any notes from the browser version, or from a restored backup, move into the vault automatically.
+`electron/main.cjs` opens `dist/index.html` in its own window. In the desktop app, notes are plain `<name>.md` files in a vault folder (`Sprout Vault` in Documents, on every system, unless you pick another under Notes → Change…), so other Markdown editors can open them too, and edits made elsewhere show up straight away. `electron/preload.cjs` gives the page only the vault functions listed in `src/study/lib/vault.ts`. Any notes from the browser version, or from a restored backup, move into the vault automatically.
 
 After changing the code, run `npm run package:desktop` again to update the app.
 
@@ -59,6 +61,14 @@ chmod +x "Sprout Studio 1.1.0.AppImage"
 ```
 
 Build it on Linux (or in WSL on Windows: `wsl --install`, then install Node.js inside it). On Linux, notes go in `~/Documents/Sprout Vault` and data in `~/.config/sprout-studio`. `npm run package:desktop` packages for whichever system you run it on.
+
+### On macOS
+
+`npm run dist:mac` builds **Sprout Studio 1.1.0.dmg** into `release/installers/`. It's a universal app, so it runs on both Apple Silicon (M1 and later) and Intel Macs. To install, open the .dmg and drag Sprout Studio into Applications. Notes go in `~/Documents/Sprout Vault` and data in `~/Library/Application Support/sprout-studio`. Keyboard shortcuts use ⌘ where Windows uses Ctrl.
+
+A Mac app can only be built on a Mac. From Windows, use GitHub instead: on the repo's **Actions** tab, pick **Build apps** → **Run workflow**. A few minutes later the finished run has the Windows .exe files, the Mac .dmg and the Linux AppImage under **Artifacts** (see `.github/workflows/build.yml`). Pushing a tag like `v1.2.0` runs it too.
+
+The app isn't signed by Apple (that needs a paid developer account), so the first time it's opened macOS says it "can't be opened". Click **Done**, then go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to Sprout Studio. It opens normally after that. If macOS instead says the app "is damaged", run `xattr -cr "/Applications/Sprout Studio.app"` in Terminal, then open it again.
 
 ## Note-taking extras
 

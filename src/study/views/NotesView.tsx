@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Keyboard
 import { Button } from '../../shared/components/Button';
 import { Panel } from '../../shared/components/Panel';
 import { cx } from '../../shared/lib/classNames';
+import { keys, trashName } from '../../shared/lib/platform';
 import { paperBackground, type PaperStyle } from '../../shared/lib/paper';
 import { NoteEditorBox, type TextEditor } from '../components/NoteEditorBox';
 import { formatShortcuts, NoteToolbar } from '../components/NoteToolbar';
@@ -23,7 +24,7 @@ const WELCOME_NOTE = `# Welcome to Sprout Studio 🌱
 This is your notes space. Everything here is plain Markdown.
 
 - Make a new note with **+ New**, or link to one that doesn't exist yet, like [[My first idea]], and click the link.
-- Press **Ctrl+E** to switch between writing and reading.
+- Press **${keys('Ctrl+E')}** to switch between writing and reading.
 - Notes that link to this one show up under *Linked from* below.
 - The **Graph** tab on the left shows how your notes connect.
 
@@ -257,7 +258,7 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
   }
 
   function handleDelete() {
-    if (!confirm(`Delete “${note.name}”?${store.folder ? ' It goes to the Recycle Bin.' : ''}`)) return;
+    if (!confirm(`Delete “${note.name}”?${store.folder ? ` It goes to the ${trashName}.` : ''}`)) return;
     store.remove(note.name);
     notify('Note deleted');
   }
@@ -277,14 +278,14 @@ function NoteEditor({ note, store, mode, onMode, onOpen, onFollowLink }: NoteEdi
         <div className="row">
           <WordCount words={words} selected={selectedWords} characters={note.body.length} />
           <div className="segmented" role="group" aria-label="Mode">
-            <button type="button" aria-pressed={mode === 'edit'} onClick={() => onMode('edit')} title="Edit (Ctrl+E)">
+            <button type="button" aria-pressed={mode === 'edit'} onClick={() => onMode('edit')} title={`Edit (${keys('Ctrl+E')})`}>
               ✏️ Edit
             </button>
             <button
               type="button"
               aria-pressed={mode === 'preview'}
               onClick={() => onMode('preview')}
-              title="Read (Ctrl+E)"
+              title={`Read (${keys('Ctrl+E')})`}
             >
               📖 Read
             </button>

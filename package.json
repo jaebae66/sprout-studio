@@ -18,7 +18,8 @@
     "test:report": "playwright show-report",
     "mcp": "node mcp/server.mjs",
     "dist": "npm run build && electron-builder --win",
-    "dist:linux": "npm run build && electron-builder --linux"
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:mac": "npm run build && electron-builder --mac"
   },
   "dependencies": {},
   "devDependencies": {
@@ -97,6 +98,24 @@
           ]
         }
       ]
+    },
+    "mac": {
+      "icon": "icons/sprout-study-1024.png",
+      "category": "public.app-category.education",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "identity": "-",
+      "hardenedRuntime": false,
+      "notarize": false
+    },
+    "dmg": {
+      "artifactName": "Sprout Studio ${version}.${ext}"
     },
     "appImage": {
       "artifactName": "Sprout Studio ${version}.${ext}"

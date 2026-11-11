@@ -20,9 +20,14 @@ const { listNotes, writeNote } = require('../electron/vault-files.cjs');
 
 /* ---------- Where the app keeps things ---------- */
 
-const USER_DATA = path.resolve(
-  process.env.SPROUT_USER_DATA ?? path.join(process.env.APPDATA ?? path.join(os.homedir(), '.config'), 'sprout-studio'),
-);
+/** Where Electron keeps app data: %APPDATA% on Windows, Application Support on macOS, ~/.config on Linux. */
+function systemDataFolder() {
+  if (process.platform === 'win32' && process.env.APPDATA) return process.env.APPDATA;
+  if (process.platform === 'darwin') return path.join(os.homedir(), 'Library', 'Application Support');
+  return process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), '.config');
+}
+
+const USER_DATA = path.resolve(process.env.SPROUT_USER_DATA ?? path.join(systemDataFolder(), 'sprout-studio'));
 const DATABASE = path.join(USER_DATA, 'sprout-studio.db');
 
 /** The vault folder the app is using (it records it in config.json each time it starts). */

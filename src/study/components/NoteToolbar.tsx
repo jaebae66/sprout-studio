@@ -11,6 +11,7 @@ import {
   type CardType,
   type HighlighterId,
 } from '../lib/stationery';
+import { keys } from '../../shared/lib/platform';
 import { textEditorFor, type TextEditor } from './NoteEditorBox';
 
 interface NoteToolbarProps {
@@ -112,9 +113,9 @@ export function NoteToolbar({ editor, noteName, highlighter, onHighlighter }: No
   return (
     <div className="note-toolbar" role="toolbar" aria-label="Formatting">
       <div className="tool-group">
-        {button(<b>B</b>, 'Bold (Ctrl+B)', (box) => format.wrap(box, '**', '**', 'bold'))}
-        {button(<i>I</i>, 'Italic (Ctrl+I)', (box) => format.wrap(box, '*', '*', 'italic'))}
-        {button(<s>S</s>, 'Strikethrough (Ctrl+Shift+X)', (box) => format.wrap(box, '~~', '~~', 'crossed out'))}
+        {button(<b>B</b>, `Bold (${keys('Ctrl+B')})`, (box) => format.wrap(box, '**', '**', 'bold'))}
+        {button(<i>I</i>, `Italic (${keys('Ctrl+I')})`, (box) => format.wrap(box, '*', '*', 'italic'))}
+        {button(<s>S</s>, `Strikethrough (${keys('Ctrl+Shift+X')})`, (box) => format.wrap(box, '~~', '~~', 'crossed out'))}
         {button('H', 'Heading', (box) => format.line(box, 'heading'))}
       </div>
 
@@ -122,7 +123,7 @@ export function NoteToolbar({ editor, noteName, highlighter, onHighlighter }: No
         <button
           type="button"
           className="tool pen"
-          title={`Highlight in ${current.label.toLowerCase()} (Ctrl+Shift+H)`}
+          title={`Highlight in ${current.label.toLowerCase()} (${keys('Ctrl+Shift+H')})`}
           aria-label={`Highlight in ${current.label.toLowerCase()}`}
           style={{ '--pen': current.swatch } as CSSProperties}
           onClick={run((box) => format.highlight(box, highlighter))}
@@ -157,10 +158,10 @@ export function NoteToolbar({ editor, noteName, highlighter, onHighlighter }: No
       <div className="tool-group">
         {button('•', 'Bullet list', (box) => format.line(box, 'bullet'))}
         {button('1.', 'Numbered list', (box) => format.line(box, 'numbered'))}
-        {button('☑', 'Checklist (Ctrl+Shift+L)', (box) => format.line(box, 'checklist'))}
+        {button('☑', `Checklist (${keys('Ctrl+Shift+L')})`, (box) => format.line(box, 'checklist'))}
         {button('❝', 'Quote', (box) => format.line(box, 'quote'))}
         {button('</>', 'Code', (box) => format.wrap(box, '`', '`', 'code'), 'mono')}
-        {button('🔗', 'Link to a note (Ctrl+K)', (box) => format.wrap(box, '[[', ']]', 'Note name'))}
+        {button('🔗', `Link to a note (${keys('Ctrl+K')})`, (box) => format.wrap(box, '[[', ']]', 'Note name'))}
       </div>
 
       <div className="tool-group">

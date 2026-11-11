@@ -1,0 +1,41 @@
+# Builds the shareable Sprout Studio apps for Windows, macOS and Linux on GitHub's own computers
+# (a Mac app can only be built on a Mac). Run it from the Actions tab ("Run workflow"), or push a
+# tag like v1.2.0. The files appear under "Artifacts" at the bottom of the finished run.
+name: Build apps
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win
+            files: release/installers/*.exe
+          - os: macos-latest
+            target: mac
+            files: release/installers/*.dmg
+          - os: ubuntu-latest
+            target: linux
+            files: release/installers/*.AppImage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # --publish never: just build the files, don't try to upload a GitHub release.
+      - run: npx electron-builder --${{ matrix.target }} --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sprout Studio (${{ matrix.target }})
+          path: ${{ matrix.files }}
+          if-no-files-found: error

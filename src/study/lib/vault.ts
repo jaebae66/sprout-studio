@@ -10,7 +10,7 @@ export interface VaultBridge {
   list(): Promise<Note[]>;
   write(name: string, body: string): Promise<void>;
   rename(from: string, to: string): Promise<void>;
-  /** Moves the note's file to the Recycle Bin. */
+  /** Moves the note's file to the Recycle Bin (the Trash on macOS and Linux). */
   remove(name: string): Promise<void>;
   /** Asks for a new vault folder. Resolves to the new path, or null if cancelled. */
   chooseFolder(): Promise<string | null>;
