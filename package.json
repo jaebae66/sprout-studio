@@ -1,7 +1,7 @@
 {
   "name": "sprout-studio",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Notes, study tools and a book maker in one cosy app.",
   "author": "puppygirl",
   "type": "module",
