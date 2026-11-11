@@ -44,8 +44,8 @@ After changing the code, run `npm run package:desktop` again to update the app.
 
 `npm run dist` builds two files into `release/installers/` with [electron-builder](https://www.electron.build/) (settings under `"build"` in `package.json`):
 
-- **Sprout Studio Setup 1.2.0.exe**: an installer. No administrator rights needed; installs for the current user, lets them choose a folder, adds Desktop and Start menu shortcuts, and can be removed from Windows' "Installed apps".
-- **Sprout Studio 1.2.0 Portable.exe**: runs straight away without installing (it starts a little slower, as it unpacks itself each time).
+- **Sprout Studio Setup 1.2.1.exe**: an installer. No administrator rights needed; installs for the current user, lets them choose a folder, adds Desktop and Start menu shortcuts, and can be removed from Windows' "Installed apps".
+- **Sprout Studio 1.2.1 Portable.exe**: runs straight away without installing (it starts a little slower, as it unpacks itself each time).
 
 Each person gets their own empty Sprout Studio: their notes go in their own `Documents\Sprout Vault`, and their data in their own `%APPDATA%\sprout-studio`. Fonts are bundled, so it looks right offline.
 
@@ -53,18 +53,18 @@ The files aren't code-signed (that needs a paid certificate), so Windows SmartSc
 
 ### On Linux
 
-`npm run dist:linux` builds **Sprout Studio 1.2.0.AppImage** into `release/installers/`. An AppImage is one file that runs on most Linux systems (Ubuntu, Fedora, Mint…) without installing:
+`npm run dist:linux` builds **Sprout Studio 1.2.1.AppImage** into `release/installers/`. An AppImage is one file that runs on most Linux systems (Ubuntu, Fedora, Mint…) without installing:
 
 ```sh
-chmod +x "Sprout Studio 1.2.0.AppImage"
-./"Sprout Studio 1.2.0.AppImage"
+chmod +x "Sprout Studio 1.2.1.AppImage"
+./"Sprout Studio 1.2.1.AppImage"
 ```
 
 Build it on Linux (or in WSL on Windows: `wsl --install`, then install Node.js inside it). On Linux, notes go in `~/Documents/Sprout Vault` and data in `~/.config/sprout-studio`. `npm run package:desktop` packages for whichever system you run it on.
 
 ### On macOS
 
-`npm run dist:mac` builds **Sprout Studio 1.2.0.dmg** into `release/installers/`. It's a universal app, so it runs on both Apple Silicon (M1 and later) and Intel Macs. To install, open the .dmg and drag Sprout Studio into Applications. Notes go in `~/Documents/Sprout Vault` and data in `~/Library/Application Support/sprout-studio`. Keyboard shortcuts use ⌘ where Windows uses Ctrl.
+`npm run dist:mac` builds two files into `release/installers/`, one for each kind of Mac, so each is about half the size: **Sprout Studio 1.2.1 (arm64).dmg** for Apple Silicon Macs (M1 and later) and **Sprout Studio 1.2.1 (x64).dmg** for older Intel Macs. To check which one a Mac needs, open the Apple menu → **About This Mac**: "Chip: Apple M…" means arm64, "Processor: … Intel" means x64. To install, open the .dmg and drag Sprout Studio into Applications. Notes go in `~/Documents/Sprout Vault` and data in `~/Library/Application Support/sprout-studio`. Keyboard shortcuts use ⌘ where Windows uses Ctrl.
 
 A Mac app can only be built on a Mac. From Windows, use GitHub instead: on the repo's **Actions** tab, pick **Build apps** → **Run workflow**. A few minutes later the finished run has the Windows .exe files, the Mac .dmg and the Linux AppImage under **Artifacts** (see `.github/workflows/build.yml`). Pushing a tag like `v1.2.0` runs it too.
 

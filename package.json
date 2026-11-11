@@ -1,7 +1,7 @@
 {
   "name": "sprout-studio",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Notes, study tools and a book maker in one cosy app.",
   "author": "puppygirl",
   "type": "module",
@@ -106,7 +106,8 @@
         {
           "target": "dmg",
           "arch": [
-            "universal"
+            "arm64",
+            "x64"
           ]
         }
       ],
@@ -115,7 +116,8 @@
       "notarize": false
     },
     "dmg": {
-      "artifactName": "Sprout Studio ${version}.${ext}"
+      "format": "ULMO",
+      "artifactName": "Sprout Studio ${version} (${arch}).${ext}"
     },
     "appImage": {
       "artifactName": "Sprout Studio ${version}.${ext}"
